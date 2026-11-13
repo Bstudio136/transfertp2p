@@ -1895,6 +1895,7 @@ async function startHost(){
         room,
         async (msg) => {
           if (msg.type === 'answer') {
+            if (offerTimer) { clearInterval(offerTimer); offerTimer = null; } // ✅ Stop renvoi offre
             if (!pc || pc.signalingState !== 'have-local-offer') return;
             try {
               await pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp });
@@ -1911,7 +1912,14 @@ async function startHost(){
           }
         },
         () => {
-          sendSignal({ type: 'offer', sdp });
+          // ✅ Envoi répété de l'offre toutes les 2 secondes jusqu'à réception de la réponse
+          const sendOffer = () => {
+            if (!connectedOnce) {
+              sendSignal({ type: 'offer', sdp });
+            }
+          };
+          sendOffer();
+          offerTimer = setInterval(sendOffer, 2000);
           setHostStatus(t('waiting-peer'), 'spin');
         },
         () => {
