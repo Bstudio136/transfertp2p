@@ -1456,6 +1456,7 @@ async function createOfferSDP(){
   return pc.localDescription.sdp;
 }
 async function createAnswerSDP(offerSdp){
+  if (pc) { try { pc.close(); } catch(e){} }
   pc = new RTCPeerConnection(ICE_CONFIG);
   wirePC();
   pc.ondatachannel = e => setupChannel(e.channel);
@@ -1895,7 +1896,7 @@ async function startHost(){
         room,
         async (msg) => {
           if (msg.type === 'answer') {
-            if (offerTimer) { clearInterval(offerTimer); offerTimer = null; } // ✅ Stop renvoi offre
+            if (offerTimer) { clearInterval(offerTimer); offerTimer = null; }
             if (!pc || pc.signalingState !== 'have-local-offer') return;
             try {
               await pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp });
@@ -1912,7 +1913,6 @@ async function startHost(){
           }
         },
         () => {
-          // ✅ Envoi répété de l'offre toutes les 2 secondes jusqu'à réception de la réponse
           const sendOffer = () => {
             if (!connectedOnce) {
               sendSignal({ type: 'offer', sdp });
@@ -2009,8 +2009,7 @@ async function joinWithCode(){
     code,
     async (msg) => {
       if (msg.type === 'offer') {
-        if (joinedOnce) return;
-        joinedOnce = true;
+        // On accepte l'offre à chaque fois pour éviter les blocages
         st.innerHTML = '<span class="spinner"></span><span></span>';
         st.lastChild.textContent = t('offer-received');
         try {
@@ -2161,7 +2160,6 @@ function updateSasUI(){
   const rejectBtn  = $('#btn-sas-reject');
   const codeEl     = $('#sas-code');
 
-  // Bouton ✓
   if (sasSelfConfirmed){
     confirmBtn.disabled = true;
     confirmBtn.textContent = '✓';
@@ -2170,7 +2168,6 @@ function updateSasUI(){
     confirmBtn.textContent = t('sas-confirm');
   }
 
-  // Bouton ✗
   rejectBtn.disabled = sasRejected;
 
   if (sasRejected){
