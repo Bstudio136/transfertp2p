@@ -1,0 +1,2718 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="description" content="Transfère tes fichiers directement entre appareils avec WebRTC. Aucun fichier n'est stocké sur un serveur." />
+<title>Transfert P2P — envoi de fichiers entre téléphones</title>
+
+<link rel="manifest" href="transfert.webmanifest" />
+
+<!-- ====== FAVICON / ICÔNE DE L'APPLICATION ====== -->
+<link rel="icon" type="image/png" sizes="any" href="https://cdn.jsdelivr.net/gh/Bstudio136/TransfertP2P@main/p2p.png" />
+<link rel="shortcut icon" type="image/png" href="https://cdn.jsdelivr.net/gh/Bstudio136/TransfertP2P@main/p2p.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/Bstudio136/TransfertP2P@main/p2p.png" />
+<meta name="msapplication-TileImage" content="https://cdn.jsdelivr.net/gh/Bstudio136/TransfertP2P@main/p2p.png" />
+<meta name="msapplication-TileColor" content="#0a0a0a" />
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    color-scheme: dark;
+    --bg:#0a0a0a; --bg-grad:radial-gradient(ellipse at 50% -10%, #1c1c1c 0%, #0a0a0a 65%);
+    --card:#161616; --card2:#1c1c1c; --text:#f5f1e6; --muted:#a8a29a; --border:#2a2a2a;
+    --accent:#f5b915; --accent-hi:#fbbf24; --accent-lo:#b8860b; --on-accent:#1a1200;
+    --accent-soft:rgba(245,185,21,.12);
+    --ok:#22c55e; --err:#ef4444; --warn:#f59e0b;
+    --radius:18px; --shadow:0 10px 40px -10px rgba(0,0,0,.55);
+    --footer-h:72px;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      color-scheme: light;
+      --bg:#f5efe0; --bg-grad:radial-gradient(ellipse at 50% -10%, #fff9e6 0%, #f5efe0 65%);
+      --card:#ffffff; --card2:#faf6ec; --text:#1a1200; --muted:#6b5b3e;
+      --border:#e8dfc9; --accent:#d4a017; --accent-hi:#e8b923; --accent-lo:#8a6508;
+      --on-accent:#1a1200; --accent-soft:rgba(212,160,23,.14);
+      --ok:#16a34a; --err:#dc2626; --warn:#d97706;
+      --shadow:0 10px 40px -12px rgba(107,91,62,.18);
+    }
+  }
+  :root[data-theme="light"]{
+    color-scheme: light;
+    --bg:#f5efe0; --bg-grad:radial-gradient(ellipse at 50% -10%, #fff9e6 0%, #f5efe0 65%);
+    --card:#ffffff; --card2:#faf6ec; --text:#1a1200; --muted:#6b5b3e;
+    --border:#e8dfc9; --accent:#d4a017; --accent-hi:#e8b923; --accent-lo:#8a6508;
+    --on-accent:#1a1200; --accent-soft:rgba(212,160,23,.14);
+    --ok:#16a34a; --err:#dc2626; --warn:#d97706;
+    --shadow:0 10px 40px -12px rgba(107,91,62,.18);
+  }
+  html,body{margin:0;padding:0;min-height:100%}
+  body{
+    background:var(--bg); background-image:var(--bg-grad); background-attachment:fixed;
+    color:var(--text);
+    font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100dvh;
+    padding:calc(16px + env(safe-area-inset-top)) 16px calc(var(--footer-h) + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+    transition:background-color .25s ease,color .25s ease;
+  }
+  .app{max-width:560px;margin:0 auto}
+  @media (min-width: 640px){ body{padding:24px 24px calc(var(--footer-h) + env(safe-area-inset-bottom))} .app{max-width:600px} }
+  @media (min-width: 900px){ body{padding:32px 32px calc(var(--footer-h) + env(safe-area-inset-bottom))} .app{max-width:720px} .btn{min-height:72px;font-size:1.06rem} }
+
+  .header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+  
+  /* === LOGO HEADER === */
+  #h1-title{display:flex;align-items:center;gap:10px;font-size:clamp(1.3rem, 3.2vw + .8rem, 1.75rem);margin:0;letter-spacing:-.02em;line-height:1.1}
+  #h1-title .h1-logo{
+    width:32px;height:32px;border-radius:8px;flex:none;object-fit:cover;
+    box-shadow:0 2px 8px rgba(0,0,0,.35);background:#0a0a0a;
+  }
+  @media (min-width: 900px){
+    #h1-title .h1-logo{width:38px;height:38px;border-radius:10px}
+  }
+  h1 span{color:var(--accent)}
+  
+  .header-actions{display:flex;gap:8px;flex:none;align-items:flex-start}
+
+  .theme-toggle{
+    width:44px;height:44px;flex:none;border-radius:50%;
+    border:1px solid var(--border);background:var(--card);color:var(--text);
+    font-size:.82rem;font-weight:800;letter-spacing:.03em;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:transform .15s,background .2s,border-color .2s;box-shadow:var(--shadow);
+  }
+  .theme-toggle:hover{background:var(--card2);border-color:var(--accent)}
+  .theme-toggle:active{transform:scale(.94)}
+
+  /* === AGRANDIR LE DRAPEAU === */
+  #btn-lang {
+    font-size: 1.5rem; 
+  }
+
+  .lang-wrap{position:relative}
+  .lang-menu{
+    position:absolute;top:calc(100% + 8px);right:0;background:var(--card);
+    border:1px solid var(--border);border-radius:14px;padding:6px;min-width:170px;
+    box-shadow:0 16px 48px -8px rgba(0,0,0,.45);z-index:60;
+    display:flex;flex-direction:column;gap:2px;animation:pop .15s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:none}}
+  .lang-menu[hidden]{display:none}
+  .lang-menu button{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+    background:transparent;border:none;color:var(--text);font-size:.9rem;font-weight:600;
+    cursor:pointer;text-align:left;transition:background .12s;
+  }
+  .lang-menu button:hover{background:var(--card2)}
+  .lang-menu button[aria-current="true"]{background:var(--accent-soft);color:var(--accent)}
+  .lang-menu button .flag{font-size:1.05rem}
+
+  .sub{color:var(--muted);font-size:.8rem;margin:0 0 20px;display:flex;gap:6px;flex-wrap:wrap}
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;background:var(--card);
+    border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:.7rem;
+    box-shadow:var(--shadow);
+  }
+  .pill b{color:var(--accent);font-weight:700}
+
+  .view{display:none}
+  .view.active{display:block;animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  button{font:inherit}
+  .btn{
+    position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;
+    gap:12px;width:100%;min-height:68px;padding:14px 18px;margin-bottom:12px;
+    background:var(--card);color:var(--text);border:1px solid var(--border);
+    border-radius:var(--radius);font-size:1.02rem;font-weight:600;cursor:pointer;
+    text-align:left;transition:transform .1s ease,background .15s ease,border-color .15s ease,box-shadow .2s;
+    box-shadow:var(--shadow);
+  }
+  .btn:hover{background:var(--card2)}
+  .btn:active{transform:scale(.98)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:700;box-shadow:0 8px 28px -10px var(--accent);}
+  .btn.primary:hover{background:var(--accent-hi);border-color:var(--accent-hi);box-shadow:0 10px 32px -8px var(--accent);}
+  .btn.ghost{background:transparent;font-weight:500;min-height:52px;font-size:.92rem;color:var(--muted);justify-content:center;box-shadow:none;}
+  .btn.ghost:hover{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
+  .btn:disabled{opacity:.45;pointer-events:none}
+  :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  .btn small{display:block;font-weight:400;font-size:.75rem;opacity:.85;margin-top:2px}
+  .ico{font-size:1.6rem;line-height:1;flex:none;transition:transform .25s ease;}
+  .btn:hover .ico{transform:scale(1.12) rotate(-4deg)}
+  .btn.primary:hover .ico{transform:scale(1.15) rotate(6deg)}
+
+  .ripple{position:absolute;border-radius:50%;pointer-events:none;background:radial-gradient(circle, rgba(255,255,255,.5) 0%, rgba(255,255,255,0) 70%);transform:scale(0);opacity:.9;animation:rippleAnim .6s ease-out;}
+  .btn.primary .ripple{background:radial-gradient(circle, rgba(0,0,0,.25) 0%, rgba(0,0,0,0) 70%)}
+  @keyframes rippleAnim{to{transform:scale(2.5);opacity:0}}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow);}
+  .code{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:clamp(2rem, 10vw, 3rem);font-weight:700;
+    letter-spacing:.2rem;text-align:center;padding:12px 0 8px;overflow-wrap:anywhere;
+    color:var(--accent);user-select:all;-webkit-user-select:all;text-indent:.2rem;
+    text-shadow:0 0 24px var(--accent-soft);animation:codePulse 2.6s ease-in-out infinite;
+  }
+  @keyframes codePulse{
+    0%,100%{text-shadow:0 0 24px var(--accent-soft);transform:scale(1)}
+    50%{text-shadow:0 0 36px var(--accent), 0 0 60px var(--accent-soft);transform:scale(1.015)}
+  }
+  .code-actions{display:flex;gap:8px;margin-top:8px}
+  .code-actions .btn{flex:1;margin:0;min-height:44px;font-size:.82rem;padding:10px}
+
+  label{display:block;font-size:.74rem;color:var(--muted);margin:16px 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+  input[type=text],textarea{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:14px;font:inherit;outline:none;transition:border-color .15s,box-shadow .15s;}
+  input[type=text]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  input#join-code{
+    font-size:clamp(1.8rem, 8vw, 2.4rem);text-align:center;letter-spacing:.5rem;
+    font-family:ui-monospace,monospace;padding:16px 10px;text-indent:.5rem;
+  }
+  textarea{min-height:92px;font-family:ui-monospace,monospace;font-size:.7rem;word-break:break-all;resize:vertical;line-height:1.35;}
+
+  .status{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.88rem;margin:12px 0 0}
+  .status.ok{color:var(--ok)}
+  .status.err{color:var(--err)}
+  .status.warn{color:var(--warn)}
+  .status.ok::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none;animation:pulseDot 1.6s ease-in-out infinite;}
+  .status.err::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--err);flex:none;}
+  .status.warn::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none;}
+  @keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.55);transform:scale(1)}50%{box-shadow:0 0 0 7px rgba(34,197,94,0);transform:scale(1.15)}}
+  .spinner{width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  }
+
+  .session-card{padding:12px 16px}
+  .stats{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin-top:8px;font-variant-numeric:tabular-nums;}
+  .stats .stat{display:inline-flex;align-items:center;gap:4px}
+  .stats .stat b{color:var(--text);font-weight:700}
+  .stats .sep{opacity:.4}
+  .rtt-good{color:var(--ok)}.rtt-mid{color:var(--warn)}.rtt-bad{color:var(--err)}
+
+  /* ============ SAS CARD ============ */
+  .sas-card{border-color:var(--accent);background:linear-gradient(180deg, var(--accent-soft) 0%, var(--card) 100%)}
+  .sas-label{
+    text-align:center;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;
+    font-weight:700;color:var(--muted);margin-bottom:4px;
+  }
+  .sas-code{
+    font-family:ui-monospace,monospace;font-size:clamp(2.2rem, 9vw, 3.2rem);
+    font-weight:800;letter-spacing:.3rem;text-align:center;padding:8px 0;
+    color:var(--accent);text-indent:.3rem;user-select:all;-webkit-user-select:all;
+    text-shadow:0 0 20px var(--accent-soft);
+  }
+  .sas-code.mismatch{color:var(--err)}
+  .sas-code.verified{color:var(--ok)}
+
+  .file{position:relative;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;animation:slideIn .28s cubic-bezier(.2,.9,.3,1.3);box-shadow:var(--shadow);transition:border-color .2s;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+  .file .row{display:flex;align-items:center;gap:10px}
+  .file .file-icon{width:36px;height:36px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);border-radius:10px;font-size:1.15rem;transition:transform .3s;}
+  .file.done .file-icon{background:rgba(34,197,94,.15);animation:popIn .4s ease}
+  .file.bad  .file-icon{background:rgba(239,68,68,.15)}
+  @keyframes popIn{0%{transform:scale(1)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+  .file .name{font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+  .file .meta{font-size:.72rem;color:var(--muted);white-space:nowrap;flex:none;font-variant-numeric:tabular-nums}
+  .bar{height:8px;background:var(--card2);border-radius:99px;overflow:hidden;margin-top:10px;border:1px solid var(--border);}
+  .bar>i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--accent-lo),var(--accent),var(--accent-hi));transition:width .2s ease;}
+  .file:not(.done):not(.bad) .bar>i{
+    background:linear-gradient(90deg,var(--accent-lo) 0%, var(--accent) 30%, var(--accent-hi) 50%, var(--accent) 70%, var(--accent-lo) 100%);
+    background-size:200% 100%;animation:shimmer 1.6s linear infinite;
+  }
+  @keyframes shimmer{to{background-position:-200% 0}}
+  .file.done .bar>i{background:var(--ok);box-shadow:0 0 12px rgba(34,197,94,.6);}
+  .file.bad  .bar>i{background:var(--err)}
+  .file.done{border-color:rgba(34,197,94,.5);animation:successPulse .7s ease-out}
+  @keyframes successPulse{0%{box-shadow:var(--shadow),0 0 0 0 rgba(34,197,94,.55)}100%{box-shadow:var(--shadow),0 0 0 18px rgba(34,197,94,0)}}
+  .file.bad{border-color:rgba(239,68,68,.5);animation:shake .4s ease-out}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+  .file .actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .file .actions a,.file .actions button{
+    flex:1 1 auto;text-align:center;padding:11px;border-radius:11px;border:1px solid var(--border);
+    background:var(--card2);color:var(--text);font-size:.83rem;font-weight:600;text-decoration:none;
+    cursor:pointer;transition:background .15s,border-color .15s,transform .1s;min-width:110px;
+    position:relative;overflow:hidden;
+  }
+  .file .actions a:hover,.file .actions button:hover{border-color:var(--accent);background:var(--accent-soft);}
+  .file .actions a:active,.file .actions button:active{transform:scale(.97)}
+  .file .actions .cancel-btn{color:var(--err)}
+  .file .actions .cancel-btn:hover{border-color:var(--err);background:rgba(239,68,68,.1)}
+  .file .actions .cancel-btn.confirming{animation:pulseWarn 1s ease-in-out infinite;}
+  @keyframes pulseWarn{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+
+  .main-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .main-actions .btn{flex:1;margin-bottom:0;min-width:140px}
+
+  .drop-overlay{
+    position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:90;
+    pointer-events:none;margin:12px;border-radius:24px;background:var(--accent-soft);
+    border:4px dashed var(--accent);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    font-size:clamp(1.1rem,3vw,1.5rem);font-weight:700;color:var(--accent);text-align:center;padding:24px;
+  }
+  body.dragging .drop-overlay{display:flex;animation:dropPulse 1.2s ease-in-out infinite}
+  @keyframes dropPulse{0%,100%{border-color:var(--accent);background:var(--accent-soft)}50%{border-color:var(--accent-hi);background:rgba(245,185,21,.2)}}
+
+  .hint{font-size:.78rem;color:var(--muted);line-height:1.55}
+  .toggle{
+    display:flex;align-items:flex-start;gap:10px;margin-top:6px;font-size:.85rem;
+    color:var(--muted);cursor:pointer;padding:12px;background:var(--card);
+    border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);
+    transition:border-color .15s,background .15s;
+  }
+  .toggle:hover{border-color:var(--accent)}
+  .toggle input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin:1px 0 0}
+
+  .footer{
+    position:fixed;left:0;right:0;bottom:0;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    text-align:center;font-size:.72rem;color:var(--muted);
+    background:var(--bg);border-top:1px solid var(--border);z-index:50;
+    box-shadow:0 -6px 24px -12px rgba(0,0,0,.35);line-height:1.2;
+  }
+  .footer a{color:var(--accent);text-decoration:none;font-weight:800;letter-spacing:.02em;transition:color .15s;}
+  .footer a:hover{color:var(--accent-hi);text-decoration:underline}
+  @media (min-width: 640px){ .footer{font-size:.78rem;padding:14px 24px calc(14px + env(safe-area-inset-bottom))} :root{--footer-h:76px} }
+
+  #toast{
+    position:fixed;left:50%;bottom:calc(var(--footer-h) + 16px + env(safe-area-inset-bottom));
+    transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--text);color:var(--bg);
+    padding:11px 18px;border-radius:999px;font-size:.85rem;font-weight:600;
+    transition:opacity .22s ease;z-index:99;max-width:90vw;text-align:center;
+    box-shadow:0 12px 40px -8px rgba(0,0,0,.5);
+  }
+  #toast.show{opacity:1;animation:toastBounce .45s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes toastBounce{
+    0%{transform:translate(-50%,20px) scale(.9)}
+    60%{transform:translate(-50%,-4px) scale(1.04)}
+    100%{transform:translate(-50%,0) scale(1)}
+  }
+
+  .btn.copied{border-color:var(--ok)!important;color:var(--ok)!important;animation:copyBounce .35s ease;}
+  @keyframes copyBounce{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+  .qr-container{display:flex;justify-content:center;margin:12px 0;padding:12px;background:#fff;border-radius:16px;box-shadow:var(--shadow);}
+  .qr-container img, .qr-container canvas{width:200px !important;height:200px !important;display:block;}
+  #qr-scanner-video{width:100%;max-width:360px;border-radius:16px;display:block;margin:0 auto 12px;background:#000;}
+  .scanner-box{text-align:center;padding:12px;}
+  .scanner-box video{max-height:50vh;object-fit:cover;}
+
+  .qr-overlay{
+    position:fixed;inset:0;z-index:95;
+    background:rgba(0,0,0,.82);
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  .qr-overlay[hidden]{display:none}
+  .qr-overlay .scanner-box{max-width:420px;width:100%;margin:0}
+</style>
+</head>
+<body>
+
+<div class="drop-overlay" aria-hidden="true" id="drop-overlay">📥 Dépose pour envoyer</div>
+
+<div class="app">
+
+  <div class="header">
+    <div>
+      <h1 id="h1-title">Transfert<span>P2P</span></h1>
+      <p class="sub" style="margin-bottom:0">
+        <span class="pill">🔒 <b data-i18n="pill-secure">Chiffré</b> <span data-i18n="pill-secure-suffix">DTLS</span></span>
+        <span class="pill">📡 <b data-i18n="pill-direct">Direct</b> <span data-i18n="pill-direct-suffix">téléphone → téléphone</span></span>
+      </p>
+    </div>
+    <div class="header-actions">
+      <div class="lang-wrap">
+        <button class="theme-toggle" id="btn-lang" type="button" aria-label="Langue" aria-haspopup="true" aria-expanded="false">🇫🇷</button>
+        <div class="lang-menu" id="lang-menu" role="menu" hidden>
+          <button type="button" role="menuitem" data-lang="fr"><span class="flag">🇫🇷</span><span>Français</span></button>
+          <button type="button" role="menuitem" data-lang="en"><span class="flag">🇬🇧</span><span>English</span></button>
+          <button type="button" role="menuitem" data-lang="it"><span class="flag">🇮🇹</span><span>Italiano</span></button>
+          <button type="button" role="menuitem" data-lang="tr"><span class="flag">🇹🇷</span><span>Türkçe</span></button>
+        </div>
+      </div>
+      <button class="theme-toggle" id="btn-theme" type="button" aria-label="Changer de thème">🌓</button>
+    </div>
+  </div>
+
+  <!-- ===================== ACCUEIL ===================== -->
+  <section class="view active" id="v-home" style="margin-top:20px">
+    <button class="btn primary" id="btn-send">
+      <span class="ico">📤</span>
+      <span>
+        <span data-i18n="send-title">Envoyer des fichiers</span>
+        <small data-i18n="send-sub">Génère un code d'appairage</small>
+      </span>
+    </button>
+    <button class="btn" id="btn-receive">
+      <span class="ico">📥</span>
+      <span>
+        <span data-i18n="receive-title">Recevoir des fichiers</span>
+        <small data-i18n="receive-sub">Saisis le code de l'autre téléphone</small>
+      </span>
+    </button>
+
+    <label class="toggle">
+      <input type="checkbox" id="chk-manual">
+      <span>
+        <strong style="color:var(--text)" data-i18n="manual-mode">Mode manuel</strong>
+        <span data-i18n="manual-suffix">(sans serveur de signalisation)</span><br>
+        <span style="font-size:.78rem" data-i18n="manual-desc">Pas de serveur de signalisation ; échange manuel de l'offre et de la réponse WebRTC.</span>
+      </span>
+    </label>
+
+    <p class="hint" id="hint-home" style="margin-top:16px" data-i18n-html="hint-auto"></p>
+  </section>
+
+  <!-- ===================== HÔTE ===================== -->
+  <section class="view" id="v-host">
+    <div class="card">
+      <div id="auto-pairing-info">
+      <div class="status" style="justify-content:center;margin:0;font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700"
+           data-i18n="pairing-code-label">Code d'invitation temporaire</div>
+      <div class="code" id="host-code">······</div>
+      <p class="hint" style="text-align:center;margin:0" data-i18n="pairing-code-hint">
+        Copie l'invitation ou scanne le QR code. Vérifie ensuite le code de sécurité.
+      </p>
+      <div id="qr-container" class="qr-container" hidden></div>
+      <div class="code-actions">
+        <button class="btn ghost" id="btn-copy-code" type="button">📋 <span data-i18n="copy">Copier</span></button>
+        <button class="btn ghost" id="btn-share-code" type="button">📤 <span data-i18n="share">Partager</span></button>
+      </div>
+      </div>
+       <div class="status" id="host-status" role="status" aria-live="polite"><span class="spinner"></span><span data-i18n="preparing">Préparation…</span></div>
+    </div>
+
+    <!-- MODE MANUEL -->
+    <div id="host-manual" hidden>
+      <label data-i18n="manual-step-1-host">1 · Ton code à transmettre</label>
+      <textarea id="host-offer" readonly placeholder="…"></textarea>
+      <div id="host-offer-qr" class="qr-container" hidden></div>
+      <button class="btn ghost" id="btn-copy-offer" style="margin-top:8px">📋 <span data-i18n="manual-copy-code">Copier ce code</span></button>
+
+      <label data-i18n="manual-step-2-host">2 · Colle la réponse de l'autre téléphone</label>
+      <textarea id="host-answer-in" data-i18n-placeholder="answer-placeholder" placeholder="Colle ici la réponse reçue…"></textarea>
+      <button class="btn ghost" id="btn-scan-answer-qr" style="margin-top:8px" type="button">📷 <span data-i18n="scan-answer-qr">Scanner la réponse QR</span></button>
+      <button class="btn primary" id="btn-host-connect" style="margin-top:12px" data-i18n="connect">Connecter</button>
+    </div>
+
+    <button class="btn ghost" id="btn-cancel-host" data-i18n="cancel">Annuler</button>
+  </section>
+
+  <!-- ===================== REJOINDRE ===================== -->
+  <section class="view" id="v-join">
+    <div class="card" id="join-code-card">
+      <label for="join-code" style="margin-top:0" data-i18n="join-label">Code à 6 chiffres</label>
+      <input type="text" id="join-code" inputmode="numeric" pattern="[0-9]{6}"
+             maxlength="6" placeholder="123 456" data-i18n-placeholder="join-placeholder"
+             autocomplete="off" spellcheck="false" />
+      <button class="btn primary" id="btn-join" style="margin-top:16px" data-i18n="join-btn">Se connecter</button>
+      <button class="btn ghost" id="btn-scan-qr" style="margin-top:8px" type="button" data-i18n="scan-qr">📷 Scanner un QR code</button>
+      <div class="status" id="join-status" role="status" aria-live="polite" hidden><span class="spinner"></span><span data-i18n="searching">Recherche…</span></div>
+    </div>
+
+    <!-- MODE MANUEL -->
+    <div id="join-manual" hidden>
+      <label data-i18n="manual-step-1-join">1 · Colle le code de l'autre téléphone</label>
+      <textarea id="join-offer-in" data-i18n-placeholder="offer-placeholder" placeholder="Colle ici le code de l'expéditeur…"></textarea>
+      <button class="btn ghost" id="btn-scan-offer-qr" style="margin-top:8px" type="button">📷 <span data-i18n="scan-offer-qr">Scanner le QR de l'offre</span></button>
+      <button class="btn primary" id="btn-join-gen" style="margin-top:12px" data-i18n="generate-answer">Générer ma réponse</button>
+
+      <div id="join-answer-box" hidden>
+        <label data-i18n="manual-step-2-join">2 · Renvoie cette réponse à l'expéditeur</label>
+        <textarea id="join-answer-out" readonly></textarea>
+        <div id="join-answer-qr" class="qr-container" hidden></div>
+        <button class="btn ghost" id="btn-copy-answer" style="margin-top:8px">📋 <span data-i18n="copy-answer">Copier la réponse</span></button>
+      </div>
+    </div>
+
+    <button class="btn ghost" id="btn-cancel-join" data-i18n="back">Retour</button>
+  </section>
+
+  <!-- ===================== SESSION ===================== -->
+  <section class="view" id="v-main">
+    <div class="card session-card">
+      <div class="status" id="conn-status" role="status" aria-live="polite" style="margin:0">
+        <span class="spinner"></span><span data-i18n="secure-connecting">Connexion sécurisée en cours…</span>
+      </div>
+      <div class="stats" id="stats" hidden>
+        <span class="stat">📶 <b id="stat-rtt">—</b></span>
+        <span class="sep">·</span>
+        <span class="stat">⏱️ <b id="stat-duration">0 s</b></span>
+      </div>
+    </div>
+
+    <!-- SAS CARD -->
+    <div class="card sas-card" id="sas-card" hidden>
+      <div class="sas-label" data-i18n="sas-title">Vérification de l'appareil</div>
+      <div class="sas-code" id="sas-code">······</div>
+      <p class="hint" style="text-align:center;margin:6px 0 8px" data-i18n-html="sas-hint">
+        <strong>Compare ce code avec l'autre appareil</strong> (de vive voix, par appel, etc.). Ils doivent être <strong>identiques</strong>. Ne clique sur ✓ que si tu as vraiment vérifié.
+      </p>
+      <div class="code-actions">
+        <button class="btn primary" id="btn-sas-confirm" type="button" data-i18n="sas-confirm">✓ Ils correspondent</button>
+        <button class="btn ghost" id="btn-sas-reject" type="button" data-i18n="sas-reject" style="color:var(--err)">✗ Ils diffèrent</button>
+      </div>
+      <div class="status" id="sas-status" role="status" aria-live="polite" style="margin-top:10px">…</div>
+    </div>
+
+    <input type="file" id="file-input" multiple hidden />
+    <button class="btn primary" id="btn-pick" disabled>
+      <span class="ico">📎</span>
+      <span>
+        <span data-i18n="pick-files">Choisir des fichiers</span>
+        <small data-i18n="pick-sub">Ou glissez-déposez ici</small>
+      </span>
+    </button>
+
+    <div id="file-list"></div>
+
+    <div class="main-actions">
+      <button class="btn ghost" id="btn-clear">🗑️ <span data-i18n="clear-list">Vider la liste</span></button>
+      <button class="btn ghost" id="btn-back" data-i18n="end-session">Terminer la session</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- Overlay du scanner QR (global) -->
+<div id="qr-scanner-box" class="qr-overlay" hidden>
+  <div class="card scanner-box">
+    <video id="qr-scanner-video" playsinline muted></video>
+    <p class="hint" style="text-align:center" data-i18n="scan-hint">Pointez la caméra vers le QR code de l'expéditeur.</p>
+    <button class="btn ghost" id="btn-close-scanner" type="button" data-i18n="close">Fermer</button>
+  </div>
+</div>
+
+<footer class="footer">
+  <span data-i18n="footer-dev">Développé par</span>
+  <a href="https://bstudio136.github.io/mylink/" target="_blank" rel="noopener" id="footer-link">Bstudio136</a>
+</footer>
+
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   0. i18n — FR / EN / IT / TR
+   ============================================================ */
+const LANG_KEY = 'ftxp2p-lang';
+const LANGUAGES = ['fr','en','it','tr'];
+const FLAGS = { fr: '🇫🇷', en: '🇬🇧', it: '🇮🇹', tr: '🇹🇷' };
+const LOGO_URL = 'https://cdn.jsdelivr.net/gh/Bstudio136/TransfertP2P@main/p2p.png';
+
+const I18N = {
+  fr: {
+    'page-title': 'Transfert P2P — envoi de fichiers entre téléphones',
+    'h1-html': 'Transfert<span>P2P</span>',
+    'pill-secure': 'Chiffré', 'pill-secure-suffix': 'DTLS',
+    'pill-direct': 'Direct', 'pill-direct-suffix': 'téléphone → téléphone',
+    'send-title': 'Envoyer des fichiers', 'send-sub': "Génère un code d'appairage",
+    'receive-title': 'Recevoir des fichiers', 'receive-sub': "Saisis le code de l'autre téléphone",
+    'manual-mode': 'Mode manuel', 'manual-suffix': '(sans serveur de signalisation)',
+    'manual-desc': "Pas de serveur de signalisation ; échange manuel de l'offre et de la réponse WebRTC.",
+    'hint-auto': "Les fichiers voyagent <strong>directement</strong> entre les appareils : aucun fichier n'est stocké sur le serveur de signalisation. Le mode automatique transmet au serveur Cloudflare les informations temporaires nécessaires à WebRTC. Le code à 6 chiffres expire après 5 minutes. <strong>Après connexion, un code de sécurité (SAS) est affiché sur les deux appareils : compare-les pour détecter une éventuelle interception.</strong>",
+    'hint-manual': "<strong>Mode manuel :</strong> aucun serveur de signalisation n'est utilisé. Tu devras échanger deux codes par copier-coller (SMS, messagerie…) ou en scannant les QR codes affichés. Le transfert des fichiers reste identique et pair-à-pair.",
+    'pairing-code-label': "Code d'invitation",
+    'pairing-code-hint': "Copie le code ou scanne le QR. Vérifie ensuite le code de sécurité affiché sur les deux appareils.",
+    'copy': 'Copier', 'share': 'Partager',
+    'preparing': 'Préparation de la connexion…',
+    'manual-step-1-host': '1 · Ton code à transmettre',
+    'manual-copy-code': 'Copier ce code',
+    'manual-step-2-host': "2 · Colle la réponse de l'autre téléphone",
+    'answer-placeholder': 'Colle ici la réponse reçue…',
+    'connect': 'Connecter', 'cancel': 'Annuler',
+    'join-label': "Code d'invitation (6 chiffres)",
+    'join-placeholder': '123 456',
+    'join-btn': 'Se connecter', 'searching': 'Recherche…',
+    'searching-peer': "Recherche de l'autre téléphone…",
+    'offer-received': 'Offre reçue, négociation…',
+    'connecting': 'Connexion en cours…',
+    'nego-failed': 'Échec de la négociation : ',
+    'manual-step-1-join': "1 · Colle le code de l'autre téléphone",
+    'offer-placeholder': "Colle ici le code de l'expéditeur…",
+    'generate-answer': 'Générer ma réponse',
+    'manual-step-2-join': "2 · Renvoie cette réponse à l'expéditeur",
+    'copy-answer': 'Copier la réponse', 'back': 'Retour',
+    'secure-connecting': 'Connexion sécurisée en cours…',
+    'connected': 'Connecté — canal chiffré DTLS actif',
+    'connected-verified': 'Connecté et vérifié — canal DTLS actif',
+    'pick-files': 'Choisir des fichiers', 'pick-sub': 'Ou glissez-déposez ici',
+    'clear-list': 'Vider la liste', 'end-session': 'Terminer la session',
+    'copied': 'Copié ✓', 'code-copied': 'Code copié ✓',
+    'copy-impossible': 'Copie impossible',
+    'copy-manual': 'Copie impossible — sélectionne et copie à la main',
+    'share-unavailable': 'Partage indisponible',
+    'connect-first': "Connecte-toi d'abord à un appareil",
+    'clear-confirm': 'Vider la liste ? Les fichiers en mémoire seront supprimés sur CET appareil ET sur l\'autre (les fichiers déjà téléchargés restent sur le disque).',
+    'clear-busy': "Attends la fin du transfert en cours avant de vider la liste.",
+    'list-cleared-by-peer': "L'autre appareil a vidé la liste.",
+    'enter-pairing-code': 'Saisis les 6 chiffres du code',
+    'code-expired': "Code expiré. Redemande un code à l'autre appareil.",
+    'crypto-required': 'Ce navigateur ne fournit pas de générateur aléatoire sécurisé. Mets-le à jour.',
+    'eta': 'reste {time}',
+    'hashing': 'Calcul de l’empreinte',
+    'scan-qr': '📷 Scanner un QR code', 'scan-hint': "Pointe la caméra vers le QR code de l'expéditeur.", 'close': 'Fermer', 'camera-unavailable': 'Caméra indisponible : ',
+    'theme-auto': 'Thème : auto', 'theme-dark': 'Thème : sombre', 'theme-light': 'Thème : clair',
+    'lang-changed': 'Langue : Français',
+    'lang-label': 'Langue : Français — cliquer pour changer',
+    'drop-to-send': 'Dépose pour envoyer',
+    'file-incomplete': 'Fichier incomplet : ', 'file-corrupted': 'Fichier corrompu : ',
+    'received': 'Reçu : ',
+    'resume-at': 'Reprise de « ', 'resume-at-suffix': ' » à ',
+    'already-received': '✔ déjà reçu',
+    'verified': '✔ empreinte contrôlée — ', 'unverified': '⚠ empreinte non contrôlée — ', 'sent': '✔ envoyé — ',
+    'cancelled': '⊘ annulé', 'cancelled-by-sender': "⊘ annulé par l'expéditeur",
+    'wrong-size': '✘ taille inattendue', 'bad-hash': '✘ empreinte incorrecte',
+    'download': '⬇️ Télécharger',
+    'cancel-btn': '⊘ Annuler', 'cancelling': 'Annulation…',
+    'channel-closed': "Le canal a été fermé. Les fichiers déjà reçus sont conservés : refais un appairage pour reprendre le transfert.",
+    'connect-failed': "La connexion directe a échoué. Réseau trop restrictif ? Essaie de passer en Wi-Fi (ou en 4G), ou relance l'appairage.",
+    'channel-closed-short': 'Canal fermé',
+    'answer-accepted': 'Réponse acceptée, connexion en cours…',
+    'answer-unreadable': 'Réponse illisible ou invalide : ',
+    'code-invalid': 'Code invalide : ',
+    'paste-answer': "Colle d'abord la réponse",
+    'paste-offer': "Colle d'abord le code de l'expéditeur",
+    'waiting-peer': "En attente… saisis ce code sur l'autre téléphone.",
+    'answer-received': 'Réponse reçue, connexion en cours…',
+    'answer-invalid': 'Réponse invalide, réessaie.',
+    'signal-error': 'Serveur de signalisation injoignable — utilise le mode manuel.',
+    'error-prefix': 'Erreur',
+    'footer-dev': 'Développé par',
+    'decomp-unavailable': 'Ce navigateur ne sait pas décompresser. Utilise un navigateur plus récent.',
+    'code-unreadable': 'Code illisible (format inconnu).',
+    'share-text': "Code Transfert P2P : {code}\nOuvre l'app et appuie sur « Recevoir ».",
+    'share-title': 'Transfert P2P',
+    'lang-menu-label': 'Choisir la langue',
+    'scan-answer-qr': 'Scanner la réponse QR',
+    'scan-offer-qr': "Scanner le QR de l'offre",
+    'qr-too-big': 'QR trop volumineux — utilise le copier-coller',
+    /* SAS */
+    'sas-title': "Vérification de l'appareil",
+    'sas-hint': "<strong>Compare ce code avec l'autre appareil</strong> (de vive voix, par appel, etc.). Ils doivent être <strong>identiques</strong>. Ne clique sur ✓ que si tu as vraiment vérifié.",
+    'sas-confirm': '✓ Ils correspondent',
+    'sas-reject': '✗ Ils diffèrent',
+    'sas-waiting': 'En attente de confirmation…',
+    'sas-waiting-peer': "En attente de confirmation de l'autre appareil…",
+    'sas-waiting-you': "L'autre appareil a confirmé. À toi de confirmer.",
+    'sas-verified': '✓ Appareil vérifié',
+    'sas-verified-toast': 'Appareil vérifié — transfert débloqué',
+    'sas-rejected-warning': "Codes différents — possible tentative d'interception. Session terminée.",
+    'sas-rejected-by-peer': "L'autre appareil a signalé une différence — session terminée.",
+    'sas-error': 'Impossible de calculer le code de vérification.',
+    'sas-first': "Vérifie d'abord l'appareil.",
+    'sas-mismatch': '⚠ Les codes de vérification ne correspondent pas.'
+  },
+  en: {
+    'page-title': 'P2P Transfer — file sending between phones',
+    'h1-html': 'Transfer<span>P2P</span>',
+    'pill-secure': 'Encrypted', 'pill-secure-suffix': 'DTLS',
+    'pill-direct': 'Direct', 'pill-direct-suffix': 'phone → phone',
+    'send-title': 'Send files', 'send-sub': 'Generates a pairing code',
+    'receive-title': 'Receive files', 'receive-sub': "Enter the other phone's code",
+    'manual-mode': 'Manual mode', 'manual-suffix': '(no signaling server)',
+    'manual-desc': 'No signaling service; manually exchange the WebRTC offer and answer.',
+    'hint-auto': "Files travel <strong>directly</strong> between devices: no file is stored by the signaling server. Automatic pairing sends temporary WebRTC connection details through the Cloudflare server. The 6-digit code expires after 5 minutes. <strong>After connecting, a security code (SAS) is shown on both devices: compare them to detect interception.</strong>",
+    'hint-manual': "<strong>Manual mode:</strong> no signaling server is used. You will have to exchange two codes via copy/paste (SMS, messaging…) or by scanning the displayed QR codes. File transfer remains identical and peer-to-peer.",
+    'pairing-code-label': 'Temporary invitation',
+    'pairing-code-hint': 'Copy the code or scan its QR. Then verify the security code on both devices.',
+    'copy': 'Copy', 'share': 'Share',
+    'preparing': 'Preparing connection…',
+    'manual-step-1-host': '1 · Your code to transmit',
+    'manual-copy-code': 'Copy this code',
+    'manual-step-2-host': "2 · Paste the other phone's answer",
+    'answer-placeholder': 'Paste the received answer here…',
+    'connect': 'Connect', 'cancel': 'Cancel',
+    'join-label': 'Invitation code (6 digits)',
+    'join-placeholder': '123 456',
+    'join-btn': 'Connect', 'searching': 'Searching…',
+    'searching-peer': 'Searching for the other phone…',
+    'offer-received': 'Offer received, negotiating…',
+    'connecting': 'Connecting…',
+    'nego-failed': 'Negotiation failed: ',
+    'manual-step-1-join': "1 · Paste the other phone's code",
+    'offer-placeholder': "Paste the sender's code here…",
+    'generate-answer': 'Generate my answer',
+    'manual-step-2-join': '2 · Send this answer back to the sender',
+    'copy-answer': 'Copy the answer', 'back': 'Back',
+    'secure-connecting': 'Secure connection in progress…',
+    'connected': 'Connected — DTLS encrypted channel active',
+    'connected-verified': 'Connected and verified — DTLS channel active',
+    'pick-files': 'Choose files', 'pick-sub': 'Or drag & drop here',
+    'clear-list': 'Clear list', 'end-session': 'End session',
+    'copied': 'Copied ✓', 'code-copied': 'Code copied ✓',
+    'copy-impossible': 'Copy failed',
+    'copy-manual': 'Copy failed — select and copy manually',
+    'share-unavailable': 'Sharing unavailable',
+    'connect-first': 'Connect to a device first',
+    'clear-confirm': 'Clear the list? Files in memory will be removed on THIS device AND on the other (files already downloaded stay on disk).',
+    'clear-busy': 'Wait for the current transfer to finish before clearing the list.',
+    'list-cleared-by-peer': 'The other device cleared the list.',
+    'enter-pairing-code': 'Enter the 6-digit code',
+    'code-expired': 'Code expired. Ask for a new code from the other device.',
+    'crypto-required': 'This browser has no secure random generator. Update it.',
+    'eta': '{time} remaining',
+    'hashing': 'Calculating fingerprint',
+    'scan-qr': '📷 Scan a QR code', 'scan-hint': "Point the camera at the sender's QR code.", 'close': 'Close', 'camera-unavailable': 'Camera unavailable: ',
+    'theme-auto': 'Theme: auto', 'theme-dark': 'Theme: dark', 'theme-light': 'Theme: light',
+    'lang-changed': 'Language: English',
+    'lang-label': 'Language: English — click to change',
+    'drop-to-send': 'Drop to send',
+    'file-incomplete': 'Incomplete file: ', 'file-corrupted': 'Corrupted file: ',
+    'received': 'Received: ',
+    'resume-at': 'Resuming « ', 'resume-at-suffix': ' » at ',
+    'already-received': '✔ already received',
+    'verified': '✔ fingerprint checked — ', 'unverified': '⚠ fingerprint not checked — ', 'sent': '✔ sent — ',
+    'cancelled': '⊘ cancelled', 'cancelled-by-sender': '⊘ cancelled by sender',
+    'wrong-size': '✘ unexpected size', 'bad-hash': '✘ wrong hash',
+    'download': '⬇️ Download',
+    'cancel-btn': '⊘ Cancel', 'cancelling': 'Cancelling…',
+    'channel-closed': 'Channel closed. Already received files are kept: re-pair to resume transfer.',
+    'connect-failed': 'Direct connection failed. Network too restrictive? Try Wi-Fi (or 4G), or restart pairing.',
+    'channel-closed-short': 'Channel closed',
+    'answer-accepted': 'Answer accepted, connecting…',
+    'answer-unreadable': 'Answer unreadable or invalid: ',
+    'code-invalid': 'Invalid code: ',
+    'paste-answer': 'Paste the answer first',
+    'paste-offer': "Paste the sender's code first",
+    'waiting-peer': 'Waiting… enter this code on the other phone.',
+    'answer-received': 'Answer received, connecting…',
+    'answer-invalid': 'Invalid answer, try again.',
+    'signal-error': 'Signaling server unreachable — use manual mode.',
+    'error-prefix': 'Error',
+    'footer-dev': 'Developed by',
+    'decomp-unavailable': 'This browser cannot decompress. Use a more recent browser.',
+    'code-unreadable': 'Code unreadable (unknown format).',
+    'share-text': 'P2P Transfer code: {code}\nOpen the app and tap "Receive".',
+    'share-title': 'P2P Transfer',
+    'lang-menu-label': 'Choose language',
+    'scan-answer-qr': 'Scan the answer QR',
+    'scan-offer-qr': 'Scan the offer QR',
+    'qr-too-big': 'QR too big — use copy-paste',
+    'sas-title': 'Device verification',
+    'sas-hint': "<strong>Compare this code with the other device</strong> (in person, by call, etc.). They must be <strong>identical</strong>. Only click ✓ if you really checked.",
+    'sas-confirm': '✓ They match',
+    'sas-reject': '✗ They differ',
+    'sas-waiting': 'Waiting for confirmation…',
+    'sas-waiting-peer': 'Waiting for the other device to confirm…',
+    'sas-waiting-you': 'The other device confirmed. Your turn.',
+    'sas-verified': '✓ Device verified',
+    'sas-verified-toast': 'Device verified — transfer unlocked',
+    'sas-rejected-warning': 'Codes differ — possible interception attempt. Session ended.',
+    'sas-rejected-by-peer': 'The other device reported a mismatch — session ended.',
+    'sas-error': 'Could not compute verification code.',
+    'sas-first': 'Verify the device first.',
+    'sas-mismatch': '⚠ Verification codes do not match.'
+  },
+  it: {
+    'page-title': 'Trasferimento P2P — invio di file tra telefoni',
+    'h1-html': 'Trasferimento<span>P2P</span>',
+    'pill-secure': 'Crittografato', 'pill-secure-suffix': 'DTLS',
+    'pill-direct': 'Diretto', 'pill-direct-suffix': 'telefono → telefono',
+    'send-title': 'Invia file', 'send-sub': 'Genera un codice di abbinamento',
+    'receive-title': 'Ricevi file', 'receive-sub': "Inserisci il codice dell'altro telefono",
+    'manual-mode': 'Modalità manuale', 'manual-suffix': '(senza server di segnalazione)',
+    'manual-desc': 'Nessun servizio di segnalazione; scambia manualmente offerta e risposta WebRTC.',
+    'hint-auto': "I file viaggiano <strong>direttamente</strong> da un dispositivo all'altro: nessun file viene memorizzato sul server di segnalazione. Il codice a 6 cifre scade dopo 5 minuti. <strong>Dopo la connessione, un codice di sicurezza (SAS) viene mostrato su entrambi i dispositivi: confrontali per rilevare un'intercettazione.</strong>",
+    'hint-manual': "<strong>Modalità manuale:</strong> nessun server di segnalazione viene utilizzato. Dovrai scambiare due codici tramite copia/incolla (SMS, messaggistica…) o scansionando i QR code visualizzati. Il trasferimento dei file rimane identico e peer-to-peer.",
+    'pairing-code-label': 'Invito temporaneo',
+    'pairing-code-hint': 'Copia il codice o scansiona il QR. Verifica poi il codice di sicurezza sui due dispositivi.',
+    'copy': 'Copia', 'share': 'Condividi',
+    'preparing': 'Preparazione della connessione…',
+    'manual-step-1-host': '1 · Il tuo codice da trasmettere',
+    'manual-copy-code': 'Copia questo codice',
+    'manual-step-2-host': "2 · Incolla la risposta dell'altro telefono",
+    'answer-placeholder': 'Incolla qui la risposta ricevuta…',
+    'connect': 'Connetti', 'cancel': 'Annulla',
+    'join-label': 'Codice di invito (6 cifre)',
+    'join-placeholder': '123 456',
+    'join-btn': 'Connetti', 'searching': 'Ricerca…',
+    'searching-peer': "Ricerca dell'altro telefono…",
+    'offer-received': 'Offerta ricevuta, negoziazione…',
+    'connecting': 'Connessione in corso…',
+    'nego-failed': 'Negoziazione fallita: ',
+    'manual-step-1-join': "1 · Incolla il codice dell'altro telefono",
+    'offer-placeholder': 'Incolla qui il codice del mittente…',
+    'generate-answer': 'Genera la mia risposta',
+    'manual-step-2-join': '2 · Invia questa risposta al mittente',
+    'copy-answer': 'Copia la risposta', 'back': 'Indietro',
+    'secure-connecting': 'Connessione sicura in corso…',
+    'connected': 'Connesso — canale crittografato DTLS attivo',
+    'connected-verified': 'Connesso e verificato — canale DTLS attivo',
+    'pick-files': 'Scegli i file', 'pick-sub': 'Oppure trascina qui',
+    'clear-list': 'Svuota elenco', 'end-session': 'Termina sessione',
+    'copied': 'Copiato ✓', 'code-copied': 'Codice copiato ✓',
+    'copy-impossible': 'Copia impossibile',
+    'copy-manual': 'Copia impossibile — seleziona e copia manualmente',
+    'share-unavailable': 'Condivisione non disponibile',
+    'connect-first': 'Connettiti prima a un dispositivo',
+    'clear-confirm': "Svuotare l'elenco? I file in memoria saranno rimossi su QUESTO dispositivo E sull'altro (i file già scaricati restano sul disco).",
+    'clear-busy': 'Attendi la fine del trasferimento in corso prima di svuotare l\'elenco.',
+    'list-cleared-by-peer': "L'altro dispositivo ha svuotato l'elenco.",
+    'enter-pairing-code': 'Inserisci le 6 cifre del codice',
+    'code-expired': "Codice scaduto. Richiedi un nuovo codice all'altro dispositivo.",
+    'crypto-required': 'Questo browser non dispone di un generatore casuale sicuro. Aggiornalo.',
+    'eta': 'restano {time}',
+    'hashing': 'Calcolo dell’impronta',
+    'scan-qr': '📷 Scansiona un QR code', 'scan-hint': 'Inquadra con la fotocamera il QR code del mittente.', 'close': 'Chiudi', 'camera-unavailable': 'Fotocamera non disponibile: ',
+    'theme-auto': 'Tema: auto', 'theme-dark': 'Tema: scuro', 'theme-light': 'Tema: chiaro',
+    'lang-changed': 'Lingua: Italiano',
+    'lang-label': 'Lingua: Italiano — clicca per cambiare',
+    'drop-to-send': 'Rilascia per inviare',
+    'file-incomplete': 'File incompleto: ', 'file-corrupted': 'File corrotto: ',
+    'received': 'Ricevuto: ',
+    'resume-at': 'Ripresa di « ', 'resume-at-suffix': ' » al ',
+    'already-received': '✔ già ricevuto',
+    'verified': '✔ impronta controllata — ', 'unverified': '⚠ impronta non controllata — ', 'sent': '✔ inviato — ',
+    'cancelled': '⊘ annullato', 'cancelled-by-sender': '⊘ annullato dal mittente',
+    'wrong-size': '✘ dimensione inattesa', 'bad-hash': '✘ impronta errata',
+    'download': '⬇️ Scarica',
+    'cancel-btn': '⊘ Annulla', 'cancelling': 'Annullamento…',
+    'channel-closed': 'Il canale è stato chiuso. I file già ricevuti sono conservati: riabbina per riprendere il trasferimento.',
+    'connect-failed': "Connessione diretta fallita. Rete troppo restrittiva? Prova il Wi-Fi (o 4G), o riavvia l'abbinamento.",
+    'channel-closed-short': 'Canale chiuso',
+    'answer-accepted': 'Risposta accettata, connessione in corso…',
+    'answer-unreadable': 'Risposta illeggibile o non valida: ',
+    'code-invalid': 'Codice non valido: ',
+    'paste-answer': 'Incolla prima la risposta',
+    'paste-offer': 'Incolla prima il codice del mittente',
+    'waiting-peer': "In attesa… inserisci questo codice sull'altro telefono.",
+    'answer-received': 'Risposta ricevuta, connessione in corso…',
+    'answer-invalid': 'Risposta non valida, riprova.',
+    'signal-error': 'Server di segnalazione irraggiungibile — usa la modalità manuale.',
+    'error-prefix': 'Errore',
+    'footer-dev': 'Sviluppato da',
+    'decomp-unavailable': 'Questo browser non sa decomprimere. Usa un browser più recente.',
+    'code-unreadable': 'Codice illeggibile (formato sconosciuto).',
+    'share-text': "Codice Trasferimento P2P: {code}\nApri l'app e tocca « Ricevi ».",
+    'share-title': 'Trasferimento P2P',
+    'lang-menu-label': 'Scegli la lingua',
+    'scan-answer-qr': 'Scansiona il QR della risposta',
+    'scan-offer-qr': "Scansiona il QR dell'offerta",
+    'qr-too-big': 'QR troppo grande — usa copia-incolla',
+    'sas-title': 'Verifica del dispositivo',
+    'sas-hint': "<strong>Confronta questo codice con l'altro dispositivo</strong> (di persona, per telefono, ecc.). Devono essere <strong>identici</strong>. Clicca ✓ solo se hai verificato davvero.",
+    'sas-confirm': '✓ Corrispondono',
+    'sas-reject': '✗ Differiscono',
+    'sas-waiting': 'In attesa di conferma…',
+    'sas-waiting-peer': "In attesa della conferma dell'altro dispositivo…",
+    'sas-waiting-you': "L'altro dispositivo ha confermato. Tocca a te.",
+    'sas-verified': '✓ Dispositivo verificato',
+    'sas-verified-toast': 'Dispositivo verificato — trasferimento sbloccato',
+    'sas-rejected-warning': "Codici diversi — possibile tentativo di intercettazione. Sessione terminata.",
+    'sas-rejected-by-peer': "L'altro dispositivo ha segnalato una differenza — sessione terminata.",
+    'sas-error': 'Impossibile calcolare il codice di verifica.',
+    'sas-first': 'Verifica prima il dispositivo.',
+    'sas-mismatch': '⚠ I codici di verifica non corrispondono.'
+  },
+  tr: {
+    'page-title': 'P2P Transfer — telefonlar arası dosya gönderimi',
+    'h1-html': 'Transfer<span>P2P</span>',
+    'pill-secure': 'Şifreli', 'pill-secure-suffix': 'DTLS',
+    'pill-direct': 'Doğrudan', 'pill-direct-suffix': 'telefon → telefon',
+    'send-title': 'Dosya gönder', 'send-sub': 'Eşleştirme kodu oluşturur',
+    'receive-title': 'Dosya al', 'receive-sub': "Diğer telefonun kodunu gir",
+    'manual-mode': 'Manuel mod', 'manual-suffix': '(sinyal sunucusu olmadan)',
+    'manual-desc': 'Sinyal hizmeti kullanmaz; WebRTC teklifini ve yanıtını elle değiş tokuş et.',
+    'hint-auto': "Dosyalar doğrudan bir cihazdan diğerine gider: hiçbir dosya sinyal sunucusunda saklanmaz. 6 haneli kod 5 dakika sonra geçersiz olur. <strong>Bağlantıdan sonra her iki cihazda bir güvenlik kodu (SAS) gösterilir: araya girme olup olmadığını anlamak için bunları karşılaştır.</strong>",
+    'hint-manual': "<strong>Manuel mod:</strong> hiçbir sinyal sunucusu kullanılmaz. İki kodu kopyala-yapıştır (SMS, mesajlaşma…) veya gösterilen QR kodlarını tarayarak değiştirmen gerekecek. Dosya transferi aynı kalır ve eşler arasıdır.",
+    'pairing-code-label': 'Geçici davet',
+    'pairing-code-hint': 'Kodu kopyala veya QR kodunu tara. Ardından iki cihazdaki güvenlik kodunu karşılaştır.',
+    'copy': 'Kopyala', 'share': 'Paylaş',
+    'preparing': 'Bağlantı hazırlanıyor…',
+    'manual-step-1-host': '1 · İletilecek kodun',
+    'manual-copy-code': 'Bu kodu kopyala',
+    'manual-step-2-host': '2 · Diğer telefonun yanıtını yapıştır',
+    'answer-placeholder': 'Alınan yanıtı buraya yapıştır…',
+    'connect': 'Bağlan', 'cancel': 'İptal',
+    'join-label': 'Davet kodu (6 hane)',
+    'join-placeholder': '123 456',
+    'join-btn': 'Bağlan', 'searching': 'Aranıyor…',
+    'searching-peer': 'Diğer telefon aranıyor…',
+    'offer-received': 'Teklif alındı, anlaşılıyor…',
+    'connecting': 'Bağlanıyor…',
+    'nego-failed': 'Anlaşma başarısız: ',
+    'manual-step-1-join': '1 · Diğer telefonun kodunu yapıştır',
+    'offer-placeholder': 'Gönderenin kodunu buraya yapıştır…',
+    'generate-answer': 'Yanıtımı oluştur',
+    'manual-step-2-join': '2 · Bu yanıtı gönderene geri gönder',
+    'copy-answer': 'Yanıtı kopyala', 'back': 'Geri',
+    'secure-connecting': 'Güvenli bağlantı kuruluyor…',
+    'connected': 'Bağlandı — DTLS şifreli kanal etkin',
+    'connected-verified': 'Bağlandı ve doğrulandı — DTLS kanalı etkin',
+    'pick-files': 'Dosya seç', 'pick-sub': 'Veya buraya sürükleyip bırak',
+    'clear-list': 'Listeyi temizle', 'end-session': 'Oturumu bitir',
+    'copied': 'Kopyalandı ✓', 'code-copied': 'Kod kopyalandı ✓',
+    'copy-impossible': 'Kopyalama başarısız',
+    'copy-manual': 'Kopyalama başarısız — metni seçip elle kopyala',
+    'share-unavailable': 'Paylaşım kullanılamıyor',
+    'connect-first': 'Önce bir cihaza bağlan',
+    'clear-confirm': 'Liste temizlensin mi? Bellekteki dosyalar BU cihazda VE diğer cihazda silinecek (indirilmiş dosyalar diskte kalır).',
+    'clear-busy': 'Listeyi temizlemeden önce devam eden transferin bitmesini bekle.',
+    'list-cleared-by-peer': 'Diğer cihaz listeyi temizledi.',
+    'enter-pairing-code': '6 haneli kodu gir',
+    'code-expired': 'Kodun süresi doldu. Diğer cihazdan yeni kod iste.',
+    'crypto-required': 'Bu tarayıcıda güvenli rastgele sayı üreteci yok. Güncelle.',
+    'eta': '{time} kaldı',
+    'hashing': 'Parmak izi hesaplanıyor',
+    'scan-qr': '📷 QR kodu tara', 'scan-hint': 'Kamerayı gönderenin QR koduna doğrult.', 'close': 'Kapat', 'camera-unavailable': 'Kamera kullanılamıyor: ',
+    'theme-auto': 'Tema: otomatik', 'theme-dark': 'Tema: koyu', 'theme-light': 'Tema: açık',
+    'lang-changed': 'Dil: Türkçe',
+    'lang-label': 'Dil: Türkçe — değiştirmek için tıkla',
+    'drop-to-send': 'Göndermek için bırak',
+    'file-incomplete': 'Eksik dosya: ', 'file-corrupted': 'Bozuk dosya: ',
+    'received': 'Alındı: ',
+    'resume-at': 'Devam ediliyor « ', 'resume-at-suffix': ' » %',
+    'already-received': '✔ zaten alındı',
+    'verified': '✔ parmak izi kontrol edildi — ', 'unverified': '⚠ parmak izi kontrol edilmedi — ', 'sent': '✔ gönderildi — ',
+    'cancelled': '⊘ iptal edildi', 'cancelled-by-sender': '⊘ gönderen iptal etti',
+    'wrong-size': '✘ beklenmeyen boyut', 'bad-hash': '✘ özet yanlış',
+    'download': '⬇️ İndir',
+    'cancel-btn': '⊘ İptal', 'cancelling': 'İptal ediliyor…',
+    'channel-closed': 'Kanal kapatıldı. Alınan dosyalar korunur: devam etmek için yeniden eşleştir.',
+    'connect-failed': 'Doğrudan bağlantı başarısız. Ağ çok mu kısıtlayıcı? Wi-Fi (veya 4G) ile dene ya da eşleştirmeyi yeniden başlat.',
+    'channel-closed-short': 'Kanal kapatıldı',
+    'answer-accepted': 'Yanıt kabul edildi, bağlanıyor…',
+    'answer-unreadable': 'Yanıt okunamıyor veya geçersiz: ',
+    'code-invalid': 'Geçersiz kod: ',
+    'paste-answer': 'Önce yanıtı yapıştır',
+    'paste-offer': 'Önce gönderenin kodunu yapıştır',
+    'waiting-peer': 'Bekleniyor… bu kodu diğer telefona gir.',
+    'answer-received': 'Yanıt alındı, bağlanıyor…',
+    'answer-invalid': 'Geçersiz yanıt, tekrar dene.',
+    'signal-error': 'Sinyal sunucusuna ulaşılamıyor — manuel modu kullan.',
+    'error-prefix': 'Hata',
+    'footer-dev': 'Geliştiren:',
+    'decomp-unavailable': 'Bu tarayıcı açmayı bilmiyor. Daha yeni bir tarayıcı kullan.',
+    'code-unreadable': 'Kod okunamıyor (bilinmeyen biçim).',
+    'share-text': 'P2P Transfer kodu: {code}\nUygulamayı aç ve « Al » düğmesine bas.',
+    'share-title': 'P2P Transfer',
+    'lang-menu-label': 'Dil seç',
+    'scan-answer-qr': 'Yanıt QR kodunu tara',
+    'scan-offer-qr': 'Teklif QR kodunu tara',
+    'qr-too-big': 'QR çok büyük — kopyala-yapıştır kullan',
+    'sas-title': 'Cihaz doğrulama',
+    'sas-hint': "<strong>Bu kodu diğer cihazla karşılaştır</strong> (yüz yüze, telefonla vb.). <strong>Aynı olmalılar</strong>. Yalnızca gerçekten kontrol ettiysen ✓ tıkla.",
+    'sas-confirm': '✓ Aynılar',
+    'sas-reject': '✗ Farklılar',
+    'sas-waiting': 'Onay bekleniyor…',
+    'sas-waiting-peer': 'Diğer cihazın onayı bekleniyor…',
+    'sas-waiting-you': 'Diğer cihaz onayladı. Sıra sende.',
+    'sas-verified': '✓ Cihaz doğrulandı',
+    'sas-verified-toast': 'Cihaz doğrulandı — transfer açıldı',
+    'sas-rejected-warning': 'Kodlar farklı — olası araya girme girişimi. Oturum kapatıldı.',
+    'sas-rejected-by-peer': 'Diğer cihaz farklılık bildirdi — oturum kapatıldı.',
+    'sas-error': 'Doğrulama kodu hesaplanamadı.',
+    'sas-first': 'Önce cihazı doğrula.',
+    'sas-mismatch': '⚠ Doğrulama kodları eşleşmiyor.'
+  }
+};
+
+const _storedLang = (() => {
+  try { return localStorage.getItem(LANG_KEY); } catch(_) { return null; }
+})();
+
+let lang;
+if (LANGUAGES.includes(_storedLang)) {
+  lang = _storedLang;
+} else {
+  const nav = (navigator.language || 'fr').toLowerCase();
+  if (nav.startsWith('tr')) lang = 'tr';
+  else if (nav.startsWith('it')) lang = 'it';
+  else if (nav.startsWith('en')) lang = 'en';
+  else lang = 'fr';
+}
+
+function t(key, vars){
+  const dict = I18N[lang] || I18N.fr;
+  let s = dict[key];
+  if (s === undefined) s = I18N.fr[key];
+  if (s === undefined) s = key;
+  if (vars){
+    for (const k in vars) s = s.replace(new RegExp('\\{'+k+'\\}','g'), vars[k]);
+  }
+  return s;
+}
+
+function updateLangButton(){
+  const btn = $('#btn-lang');
+  if (!btn) return;
+  btn.textContent = FLAGS[lang] || lang.toUpperCase();
+  btn.title = t('lang-menu-label');
+  btn.setAttribute('aria-label', t('lang-menu-label'));
+  document.querySelectorAll('#lang-menu button').forEach(b => {
+    if (b.dataset.lang === lang) b.setAttribute('aria-current', 'true');
+    else b.removeAttribute('aria-current');
+  });
+}
+
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = t(el.getAttribute('data-i18n'));
+    if (v !== undefined) el.textContent = v;
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const v = t(el.getAttribute('data-i18n-html'));
+    if (v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const v = t(el.getAttribute('data-i18n-placeholder'));
+    if (v !== undefined) el.placeholder = v;
+  });
+
+  // On restaure le logo ici !
+  const h1 = $('#h1-title');
+  if (h1) {
+    h1.innerHTML =
+      '<img class="h1-logo" src="' + LOGO_URL + '" alt="" width="32" height="32" loading="eager" decoding="async" />' +
+      '<span>' + t('h1-html') + '</span>';
+  }
+
+  const drop = $('#drop-overlay');
+  if (drop) drop.textContent = '📥 ' + t('drop-to-send');
+
+  document.documentElement.lang = lang;
+  document.title = t('page-title');
+
+  updateThemeButton();
+  updateLangButton();
+}
+
+/* ============================================================
+   0bis. Thème
+   ============================================================ */
+const THEME_KEY = 'ftxp2p-theme';
+const THEMES = ['auto','dark','light'];
+
+function currentTheme(){
+  let stored = null;
+  try { stored = localStorage.getItem(THEME_KEY); } catch(_){}
+  return THEMES.includes(stored) ? stored : 'auto';
+}
+function updateMetaThemeColor(){
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const attr = document.documentElement.getAttribute('data-theme');
+  const sysLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+  const isLight = attr === 'light' || (attr !== 'dark' && sysLight);
+  meta.content = isLight ? '#f5efe0' : '#0a0a0a';
+}
+function applyTheme(pref){
+  if (pref === 'auto'){
+    document.documentElement.removeAttribute('data-theme');
+    try { localStorage.removeItem(THEME_KEY); } catch(_){}
+  } else {
+    document.documentElement.setAttribute('data-theme', pref);
+    try { localStorage.setItem(THEME_KEY, pref); } catch(_){}
+  }
+  updateMetaThemeColor();
+  updateThemeButton();
+}
+function updateThemeButton(){
+  const th = currentTheme();
+  const btn = $('#btn-theme');
+  if (!btn) return;
+  const icon  = th === 'auto' ? '🌓' : th === 'dark' ? '🌙' : '☀️';
+  const label = t('theme-' + th);
+  btn.textContent = icon;
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
+}
+
+/* ============================================================
+   1. Utilitaires
+   ============================================================ */
+const $  = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+function bytesToB64u(bytes){
+  let bin = '';
+  const STEP = 0x8000;
+  for (let i = 0; i < bytes.length; i += STEP){
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + STEP));
+  }
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64uToBytes(str){
+  str = str.replace(/-/g,'+').replace(/_/g,'/');
+  while (str.length % 4) str += '=';
+  const bin = atob(str);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function packSDP(sdp){
+  if (typeof CompressionStream === 'undefined'){
+    return 'r' + bytesToB64u(new TextEncoder().encode(sdp));
+  }
+  const stream = new Blob([sdp]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  const buf = await new Response(stream).arrayBuffer();
+  return 'z' + bytesToB64u(new Uint8Array(buf));
+}
+async function unpackSDP(code){
+  code = code.trim().replace(/\s+/g,'');
+  const kind = code[0];
+  const bytes = b64uToBytes(code.slice(1));
+  if (kind === 'r') return new TextDecoder().decode(bytes);
+  if (kind === 'z'){
+    if (typeof DecompressionStream === 'undefined'){
+      throw new Error(t('decomp-unavailable'));
+    }
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return await new Response(stream).text();
+  }
+  throw new Error(t('code-unreadable'));
+}
+
+function fmtSize(n){
+  if (n < 1024) return n + ' o';
+  const u = ['Ko','Mo','Go','To'];
+  let i = -1;
+  do { n /= 1024; i++; } while (n >= 1024 && i < u.length - 1);
+  return n.toFixed(n < 10 ? 1 : 0) + ' ' + u[i];
+}
+
+function fmtDuration(seconds){
+  seconds = Math.max(0, Math.ceil(seconds));
+  const m = Math.floor(seconds / 60), s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function toast(msg){
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function showView(id){
+  $$('.view').forEach(v => v.classList.toggle('active', v.id === id));
+}
+
+function vibrate(ms){
+  if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(_){} }
+}
+
+function fileKey(f){ return f.name + '|' + f.size + '|' + (f.lastModified || 0); }
+
+/* ============ Code à 6 chiffres ============ */
+function makePairingCode(){
+  if (!window.crypto || typeof crypto.getRandomValues !== 'function'){
+    throw new Error(t('crypto-required'));
+  }
+  const buf = new Uint32Array(1);
+  const limit = Math.floor(0x100000000 / 1000000) * 1000000;
+  let n;
+  do {
+    crypto.getRandomValues(buf);
+    n = buf[0];
+  } while (n >= limit);
+  return String(n % 1000000).padStart(6, '0');
+}
+function formatPairingCode(code){
+  if (!code || code.length !== 6) return code || '······';
+  return code.slice(0, 3) + ' ' + code.slice(3);
+}
+function normalizePairingCode(raw){
+  return (raw || '').replace(/\D/g, '').slice(0, 6);
+}
+
+/* ============ SAS ============ */
+function extractFingerprint(sdp){
+  if (!sdp) return '';
+  const m = sdp.match(/a=fingerprint:sha-256 ([0-9A-Fa-f:]+)/);
+  return m ? m[1].toLowerCase() : '';
+}
+async function computeSAS(){
+  try {
+    if (!(window.crypto && crypto.subtle && crypto.subtle.digest)) return null;
+    const localFp  = extractFingerprint(pc && pc.localDescription  && pc.localDescription.sdp);
+    const remoteFp = extractFingerprint(pc && pc.remoteDescription && pc.remoteDescription.sdp);
+    if (!localFp || !remoteFp) return null;
+    const sorted = [localFp, remoteFp].sort().join('|');
+    const hash = new Uint8Array(
+      await crypto.subtle.digest('SHA-256', new TextEncoder().encode(sorted))
+    );
+    const n = new DataView(hash.buffer).getUint32(0) % 1000000;
+    return String(n).padStart(6, '0');
+  } catch (_) {
+    return null;
+  }
+}
+function formatSasCode(code){
+  if (!code || code.length !== 6) return code || '······';
+  return code.slice(0, 3) + ' ' + code.slice(3);
+}
+
+function fileIcon(name, type){
+  const ty  = (type || '').toLowerCase();
+  const ext = (name || '').split('.').pop().toLowerCase();
+  if (ty.startsWith('image/') || ['jpg','jpeg','png','gif','webp','svg','heic','heif','avif','bmp'].includes(ext)) return '🖼️';
+  if (ty.startsWith('video/') || ['mp4','mov','mkv','webm','avi','m4v','3gp','flv'].includes(ext)) return '🎬';
+  if (ty.startsWith('audio/') || ['mp3','wav','ogg','m4a','flac','aac','opus'].includes(ext)) return '🎵';
+  if (ty === 'application/pdf' || ext === 'pdf') return '📕';
+  if (['zip','rar','7z','tar','gz','bz2','xz'].includes(ext)) return '📦';
+  if (['doc','docx','odt','rtf','pages'].includes(ext)) return '📝';
+  if (['xls','xlsx','ods','csv','numbers'].includes(ext)) return '📊';
+  if (['ppt','pptx','odp','key'].includes(ext)) return '📽️';
+  if (['txt','md','log'].includes(ext)) return '📄';
+  if (['js','ts','jsx','tsx','py','java','c','cpp','h','css','html','json','xml','yml','yaml','rs','go','php','sh'].includes(ext)) return '💻';
+  return '📎';
+}
+
+async function copyField(el){
+  const value = el.value || el.textContent;
+  try{
+    await navigator.clipboard.writeText(value);
+    toast(t('copied'));
+  }catch(e){
+    if (el.select){
+      el.removeAttribute('readonly');
+      el.focus(); el.select(); el.setSelectionRange(0, 999999);
+      try { document.execCommand('copy'); toast(t('copied')); }
+      catch(_) { toast(t('copy-manual')); }
+      el.setAttribute('readonly','');
+    } else {
+      toast(t('copy-impossible'));
+    }
+  }
+}
+
+function removeFileUI(handle){
+  if (!handle) return;
+  if (handle._blobUrl){
+    try { URL.revokeObjectURL(handle._blobUrl); } catch(_){}
+    handle._blobUrl = null;
+  }
+  if (!handle.el || !handle.el.parentNode) return;
+  const el = handle.el;
+  el.style.pointerEvents = 'none';
+  el.style.transition = 'opacity .18s ease, transform .18s ease';
+  el.style.opacity = '0';
+  el.style.transform = 'translateX(24px) scale(.96)';
+  setTimeout(() => el.remove(), 190);
+}
+
+function clearFileListUI(opts){
+  opts = opts || {};
+  store.forEach(st => {
+    if (st.ui && st.ui._blobUrl){ try { URL.revokeObjectURL(st.ui._blobUrl); } catch(_){} st.ui._blobUrl = null; }
+    if (st._blobUrl){ try { URL.revokeObjectURL(st._blobUrl); } catch(_){} st._blobUrl = null; }
+    st.ui = null;
+  });
+  if (opts.wipeStore){
+    store.forEach(st => { st.chunks = []; st.blob = null; st.bytes = 0; });
+    store.clear();
+    nidMap.clear();
+  }
+  $('#file-list').innerHTML = '';
+}
+
+function renderQrPayload(container, payload){
+  if (!container) return false;
+  if (!payload){ container.innerHTML = ''; container.hidden = true; return false; }
+  if (typeof qrcode === 'undefined'){ container.hidden = true; return false; }
+  try {
+    // 'L' = capacité max (2953 octets)
+    const qr = qrcode(0, 'L');
+    qr.addData(payload);
+    qr.make();
+    container.innerHTML = qr.createImgTag(4, 4);
+    container.hidden = false;
+    return true;
+  } catch (e) {
+    container.innerHTML = '';
+    container.hidden = true;
+    return false;
+  }
+}
+
+/* ============================================================
+   2. Hachage — Web Worker incrémental
+   ============================================================ */
+const HASH_BLOCK = 4 * 1024 * 1024;
+
+const hashWorkerCode = `
+self.addEventListener('message', async (e) => {
+  const data = e.data;
+  try {
+    if (data.type === 'reset') {
+      self.parts = [];
+      self.postMessage({ type: 'ready' });
+      return;
+    }
+    if (data.type === 'chunk') {
+      self.parts.push(new Uint8Array(await crypto.subtle.digest('SHA-256', data.buffer)));
+      self.postMessage({ type: 'ack' });
+      return;
+    }
+    if (data.type === 'finish') {
+      if (!self.parts.length) self.parts.push(new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(0))));
+      const all = new Uint8Array(self.parts.length * 32);
+      self.parts.forEach((part, i) => all.set(part, i * 32));
+      const final = new Uint8Array(await crypto.subtle.digest('SHA-256', all));
+      self.postMessage({ type: 'done', hash: final.buffer }, [final.buffer]);
+    }
+  } catch (err) {
+    self.postMessage({ type: 'error', error: err.message });
+  }
+});
+`;
+const hashWorkerBlob = new Blob([hashWorkerCode], { type: 'application/javascript' });
+const hashWorkerUrl = URL.createObjectURL(hashWorkerBlob);
+let hashWorker = null;
+
+function getHashWorker() {
+  if (!hashWorker) hashWorker = new Worker(hashWorkerUrl);
+  return hashWorker;
+}
+
+let hashQueue = Promise.resolve();
+function hashBlob(blob, onProgress){
+  const result = hashQueue.then(() => hashBlobWorker(blob, onProgress));
+  hashQueue = result.catch(() => null);
+  return result;
+}
+async function hashBlobWorker(blob, onProgress) {
+  if (!(window.crypto && crypto.subtle && crypto.subtle.digest)) return null;
+  const worker = getHashWorker();
+  return new Promise((resolve, reject) => {
+    let offset = 0, settled = false;
+    const finish = (error, hash) => {
+      if (settled) return;
+      settled = true;
+      worker.removeEventListener('message', onMessage);
+      error ? reject(error) : resolve(hash);
+    };
+    const sendNext = async () => {
+      try{
+        if (offset >= blob.size) { worker.postMessage({ type: 'finish' }); return; }
+        const buf = await blob.slice(offset, offset + HASH_BLOCK).arrayBuffer();
+        offset += buf.byteLength;
+        if (onProgress) onProgress(offset, blob.size);
+        worker.postMessage({ type: 'chunk', buffer: buf }, [buf]);
+      }catch(e){ finish(e); }
+    };
+    const onMessage = (e) => {
+      if (e.data.type === 'ready' || e.data.type === 'ack') sendNext();
+      else if (e.data.type === 'error') finish(new Error(e.data.error));
+      else if (e.data.type === 'done') finish(null, new Uint8Array(e.data.hash));
+    };
+    worker.addEventListener('message', onMessage);
+    try { worker.postMessage({ type: 'reset' }); }
+    catch(e){ finish(e); }
+  });
+}
+
+/* ============================================================
+   3. Config réseau — 6 chiffres
+   ============================================================ */
+const ICE_CONFIG = {
+  iceServers: [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+    { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+  ]
+};
+
+// ✅ NOUVELLE URL CLOUDFLARE WEBSOCKET
+const SIGNAL_URL = 'wss://ftxp2p-signal.sbavalux121.workers.dev';
+const PAIRING_TTL = 5 * 60 * 1000; // 5 min
+
+/* ============================================================
+   4. État global
+   ============================================================ */
+const CHUNK = 16 * 1024;
+const HIGH_WATER = 8 * 1024 * 1024;
+const LOW_WATER  = 1 * 1024 * 1024;
+
+let pc = null, dc = null;
+let mode = 'auto'; // 'auto' au lieu de 'ntfy'
+let role = null;
+let pairingCode = '';
+let sessionStart = 0;
+let offerTimer = null;
+let joinedOnce = false;
+let nidSeq = 0;
+
+const store  = new Map();
+const nidMap = new Map();
+let haveRemote = {};
+
+let statePromise = null, stateResolve = null;
+let queue = [];
+let busy = false;
+const cancelled = new Set();
+
+let sessionTimer = null, sessionStartTime = 0;
+let pairingTimer = null;
+let pingTimer = null, currentRtt = null;
+
+/* --- SAS --- */
+let sasCode = '';
+let sasSelfConfirmed = false;
+let sasPeerConfirmed = false;
+let sasVerified = false;
+let sasRejected = false;
+
+/* ============================================================
+   5. UI fichiers
+   ============================================================ */
+function uiAddFile(kind, name, size, initialBytes, opts){
+  opts = opts || {};
+  const el = document.createElement('div');
+  el.className = 'file';
+  el.innerHTML =
+    '<div class="row">' +
+      '<div class="file-icon"></div>' +
+      '<div class="name"></div>' +
+      '<div class="meta"></div>' +
+    '</div>' +
+    '<div class="bar"><i></i></div>' +
+    '<div class="actions" hidden></div>';
+  el.querySelector('.file-icon').textContent = fileIcon(name, opts.type);
+  el.querySelector('.name').textContent = name;
+
+  const meta    = el.querySelector('.meta');
+  const fill    = el.querySelector('.bar > i');
+  const actions = el.querySelector('.actions');
+
+  $('#file-list').prepend(el);
+
+  const handle = { el, meta, fill, actions, size, name, kind };
+  handle.update = (bytes, txt) => {
+    const pct = size > 0 ? Math.min(100, bytes / size * 100) : 100;
+    fill.style.width = pct.toFixed(1) + '%';
+    meta.textContent = txt || (fmtSize(bytes) + ' / ' + fmtSize(size));
+  };
+  handle.update(initialBytes || 0);
+
+  if (opts.onCancel) addCancelAction(handle, opts.onCancel);
+
+  return handle;
+}
+
+function addCancelAction(handle, onCancel){
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'cancel-btn';
+  b.textContent = t('cancel-btn');
+  b.onclick = () => {
+    b.disabled = true;
+    b.classList.add('confirming');
+    b.textContent = t('cancelling');
+    onCancel();
+  };
+  handle.actions.appendChild(b);
+  handle.actions.hidden = false;
+}
+
+/* ============================================================
+   6. WebRTC
+   ============================================================ */
+function wirePC(){
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed'){
+      onFatal(t('connect-failed'));
+    }
+  };
+}
+function waitIce(){
+  return new Promise(resolve => {
+    if (pc.iceGatheringState === 'complete') return resolve();
+    const timer = setTimeout(done, 6000);
+    function check(){ if (pc.iceGatheringState === 'complete') done(); }
+    function done(){
+      clearTimeout(timer);
+      pc.removeEventListener('icegatheringstatechange', check);
+      resolve();
+    }
+    pc.addEventListener('icegatheringstatechange', check);
+  });
+}
+async function createOfferSDP(){
+  pc = new RTCPeerConnection(ICE_CONFIG);
+  wirePC();
+  dc = pc.createDataChannel('ft', { ordered: true });
+  setupChannel(dc);
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await waitIce();
+  return pc.localDescription.sdp;
+}
+async function createAnswerSDP(offerSdp){
+  pc = new RTCPeerConnection(ICE_CONFIG);
+  wirePC();
+  pc.ondatachannel = e => setupChannel(e.channel);
+  await pc.setRemoteDescription({ type: 'offer', sdp: offerSdp });
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await waitIce();
+  return pc.localDescription.sdp;
+}
+
+/* ============================================================
+   7. Data channel
+   ============================================================ */
+function setupChannel(channel){
+  dc = channel;
+  dc.binaryType = 'arraybuffer';
+  dc.bufferedAmountLowThreshold = LOW_WATER;
+
+  dc.onopen = () => {
+    onConnected();
+    try { dc.send(JSON.stringify({ t: 'hello' })); } catch(e){}
+  };
+  dc.onmessage = ev => {
+    if (typeof ev.data === 'string') onControl(ev.data);
+    else onBinary(ev.data);
+  };
+  dc.onclose = () => {
+    stopPing(); stopSessionTimer();
+    onFatal(t('channel-closed'));
+  };
+  dc.onerror = () => {};
+}
+
+function onControl(raw){
+  let msg;
+  try { msg = JSON.parse(raw); } catch(e){ return; }
+
+  switch (msg.t){
+    case 'hello':
+      try { dc.send(JSON.stringify({ t: 'state', have: snapshotHave() })); } catch(_){}
+      break;
+    case 'state':
+      haveRemote = msg.have || {};
+      if (stateResolve) stateResolve();
+      break;
+    case 'sas-ok':
+      onSasPeerConfirm();
+      break;
+    case 'sas-reject':
+      onSasPeerReject();
+      break;
+    case 'list-clear':
+      clearFileListUI({ wipeStore: true });
+      try { dc.send(JSON.stringify({ t: 'state', have: snapshotHave() })); } catch(_){}
+      toast(t('list-cleared-by-peer'));
+      break;
+    case 'file':
+      prepareReceive(msg);
+      break;
+    case 'file-end':
+      finishReceive(msg);
+      break;
+    case 'file-cancel': {
+      const key = nidMap.get(msg.nid);
+      const st  = store.get(key);
+      if (st){
+        if (st.ui) removeFileUI(st.ui);
+        if (st._blobUrl){ try { URL.revokeObjectURL(st._blobUrl); } catch(_){} st._blobUrl = null; }
+        st.cancelled = true;
+        st.chunks = [];
+        st.blob = null;
+        st.bytes = 0;
+        store.delete(key);
+        toast(t('cancelled-by-sender'));
+        vibrate(25);
+      }
+      nidMap.delete(msg.nid);
+      try { dc.send(JSON.stringify({ t: 'state', have: snapshotHave() })); } catch(_){}
+      break;
+    }
+    case 'ping':
+      try { dc.send(JSON.stringify({ t: 'pong', ts: msg.ts })); } catch(_){}
+      break;
+    case 'pong':
+      currentRtt = performance.now() - msg.ts;
+      updateRttDisplay();
+      break;
+  }
+}
+
+function snapshotHave(){
+  const out = {};
+  store.forEach((st, key) => { out[key] = st.bytes; });
+  return out;
+}
+
+async function prepareReceive(msg){
+  let st = store.get(msg.key);
+  if (!st || st.bytes > msg.size){
+    st = { name: msg.name, size: msg.size, type: msg.type || '', hash: msg.hash,
+           chunks: [], bytes: 0, ui: null, done: false, cancelled: false, _blobUrl: null };
+    store.set(msg.key, st);
+  }
+  nidMap.set(msg.nid, msg.key);
+
+  if (st.ui) removeFileUI(st.ui);
+  const ui = uiAddFile('in', msg.name, msg.size, st.bytes, { type: msg.type });
+  st.ui = ui;
+  if (st.done){
+    ui.el.classList.add('done');
+    ui.update(msg.size, t('already-received'));
+    addDownloadActions(ui, st);
+  }
+}
+
+async function onBinary(ab){
+  const u8 = new Uint8Array(ab);
+  if (u8.length < 9 || u8[0] !== 1) return;
+  const dv  = new DataView(ab);
+  const nid = dv.getUint32(1);
+  const idx = dv.getUint32(5);
+
+  const key = nidMap.get(nid);
+  if (!key) return;
+  const st = store.get(key);
+  if (!st || st.cancelled) return;
+
+  if (idx !== st.chunks.length) return;
+
+  const payload = u8.slice(9);
+
+  st.chunks.push(payload);
+  st.bytes += payload.length;
+
+  if (st.ui){
+    st.ui.update(st.bytes, fmtSize(st.bytes) + ' / ' + fmtSize(st.size) +
+      '  (' + Math.floor(st.bytes / st.size * 100) + '%)');
+  }
+}
+
+async function finishReceive(msg){
+  const key = nidMap.get(msg.nid);
+  const st  = store.get(key);
+  if (!st || st.cancelled) return;
+  if (st.done) return;
+
+  const blob = new Blob(st.chunks, { type: st.type || 'application/octet-stream' });
+
+  if (blob.size !== st.size){
+    if (st.ui){ st.ui.el.classList.add('bad'); st.ui.update(blob.size, t('wrong-size')); }
+    toast(t('file-incomplete') + st.name);
+    st.chunks = []; st.bytes = 0; st.blob = null; st.done = false;
+    return;
+  }
+  const actual = await hashBlob(blob);
+  if (st.cancelled || !store.has(key)) return;
+  if (st.hash && actual && bytesToB64u(actual) !== st.hash){
+    if (st.ui){ st.ui.el.classList.add('bad'); st.ui.update(st.size, t('bad-hash')); }
+    toast(t('file-corrupted') + st.name);
+    return;
+  }
+
+  st.blob = blob;
+  st.done = true;
+  st.chunks = [];
+  if (st.ui){
+    st.ui.el.classList.add('done');
+    st.ui.update(st.size, t(actual ? 'verified' : 'unverified') + fmtSize(st.size));
+    addDownloadActions(st.ui, st);
+  }
+  toast(t('received') + st.name);
+  vibrate(40);
+}
+
+function addDownloadActions(ui, st){
+  if (st._blobUrl){ try { URL.revokeObjectURL(st._blobUrl); } catch(_){} st._blobUrl = null; }
+  const box = ui.actions;
+  box.hidden = false;
+  box.innerHTML = '';
+
+  const file = new File([st.blob], st.name, { type: st.type || 'application/octet-stream' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '📤 ' + t('share');
+    b.onclick = () => navigator.share({ files: [file] }).catch(() => {});
+    box.appendChild(b);
+  }
+
+  const url = URL.createObjectURL(st.blob);
+  st._blobUrl = url;
+  ui._blobUrl = url;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = st.name;
+  a.textContent = t('download');
+  box.appendChild(a);
+}
+
+/* ============================================================
+   8. Envoi
+   ============================================================ */
+async function waitBuffer(nid){
+  while (dc && dc.readyState === 'open' && dc.bufferedAmount > HIGH_WATER){
+    if (nid != null && cancelled.has(nid)) throw new Error('__CANCELLED__');
+    await new Promise(r => setTimeout(r, 40));
+  }
+  if (!dc || dc.readyState !== 'open') throw new Error(t('channel-closed-short'));
+}
+
+async function sendOne(file){
+  let ui = null;
+  let nid = null;
+
+  try {
+    ui = uiAddFile('out', file.name, file.size, 0, { type: file.type });
+    ui.update(0, t('hashing'));
+    const hash = await hashBlob(file, (done, total) => {
+      const pct = total ? done / total : 1;
+      ui.update(file.size * pct, t('hashing') + ' · ' + Math.floor(pct * 100) + '%');
+    });
+    const key  = (hash ? bytesToB64u(hash) : fileKey(file)) + '|' + file.name + '|' + file.size;
+    nid = ++nidSeq;
+    nidMap.set(nid, key);
+
+    dc.send(JSON.stringify({
+      t: 'file', nid, key,
+      name: file.name, size: file.size, type: file.type,
+      hash: hash ? bytesToB64u(hash) : null
+    }));
+
+    const already = Math.max(0, Math.min(file.size, haveRemote[key] || 0));
+    const totalChunks = Math.ceil(file.size / CHUNK);
+    const startChunk  = Math.min(totalChunks, Math.floor(already / CHUNK));
+
+    ui.update(startChunk * CHUNK);
+    addCancelAction(ui, () => {
+      if (nid == null || cancelled.has(nid)) return;
+      cancelled.add(nid);
+      removeFileUI(ui);
+      try { dc.send(JSON.stringify({ t: 'file-cancel', nid })); } catch(e){}
+      vibrate(20);
+    });
+
+    if (startChunk > 0 && startChunk < totalChunks){
+      toast(t('resume-at') + file.name + t('resume-at-suffix') +
+            Math.floor(startChunk * CHUNK / file.size * 100) + '%');
+    }
+
+    const t0 = performance.now();
+    let sent = startChunk * CHUNK;
+    let lastUi = 0;
+    let lastBytes = sent, lastTime = t0, smoothedSpeed = 0;
+
+    for (let i = startChunk; i < totalChunks; i++){
+      if (cancelled.has(nid)) throw new Error('__CANCELLED__');
+      await waitBuffer(nid);
+      if (cancelled.has(nid)) throw new Error('__CANCELLED__');
+
+      const start = i * CHUNK;
+      const buf = await file.slice(start, Math.min(start + CHUNK, file.size)).arrayBuffer();
+      if (cancelled.has(nid)) throw new Error('__CANCELLED__');
+
+      const out = new Uint8Array(9 + buf.byteLength);
+      const dv  = new DataView(out.buffer);
+      dv.setUint8(0, 1);
+      dv.setUint32(1, nid);
+      dv.setUint32(5, i);
+      out.set(new Uint8Array(buf), 9);
+
+      dc.send(out.buffer);
+      sent += buf.byteLength;
+
+      const now = performance.now();
+      if (now - lastUi > 120 || i === totalChunks - 1){
+        if (now - lastTime > 250){
+          const inst = (sent - lastBytes) / ((now - lastTime) / 1000);
+          smoothedSpeed = smoothedSpeed === 0 ? inst : smoothedSpeed * 0.7 + inst * 0.3;
+          lastBytes = sent; lastTime = now;
+        }
+        lastUi = now;
+        const remaining = smoothedSpeed > 0 ? '  · ' + t('eta', { time: fmtDuration((file.size - sent) / smoothedSpeed) }) : '';
+        ui.update(sent, fmtSize(sent) + ' / ' + fmtSize(file.size) +
+          (smoothedSpeed > 0 ? '  · ' + fmtSize(smoothedSpeed) + '/s' : '') + remaining);
+      }
+    }
+
+    if (cancelled.has(nid)) throw new Error('__CANCELLED__');
+
+    dc.send(JSON.stringify({ t: 'file-end', nid }));
+    ui.el.classList.add('done');
+    ui.update(file.size, t('sent') + fmtSize(file.size));
+    vibrate(30);
+  } catch (e){
+    const isCancel = e.message === '__CANCELLED__' || (nid != null && cancelled.has(nid));
+    if (isCancel){
+      cancelled.delete(nid);
+      if (nid != null) nidMap.delete(nid);
+      if (ui) removeFileUI(ui);
+      return;
+    }
+    if (!ui) ui = uiAddFile('out', file.name, file.size, 0, { type: file.type });
+    ui.el.classList.add('bad');
+    ui.update(0, '✘ ' + e.message);
+    throw e;
+  }
+}
+
+async function processQueue(){
+  if (busy) return;
+  busy = true;
+  try{
+    if (statePromise) await statePromise;
+    while (queue.length){
+      if (!dc || dc.readyState !== 'open') throw new Error(t('channel-closed-short'));
+      if (!sasVerified) throw new Error(t('sas-first'));
+      const f = queue.shift();
+      try { await sendOne(f); } catch(e){ /* UI déjà màj */ }
+    }
+  }catch(e){
+    onFatal(e.message);
+  }finally{
+    busy = false;
+  }
+}
+function queueFiles(files){
+  if (!sasVerified){ toast(t('sas-first')); return; }
+  for (const f of files) queue.push(f);
+  processQueue();
+}
+
+/* ============================================================
+   9. Signalisation via WebSocket Cloudflare
+   ============================================================ */
+let signalSocket = null;
+let signalOnMessage = null;
+let signalReconnectTimer = null;
+let signalRoom = null;
+
+function connectSignal(roomCode, onMessage, onOpen, onFail) {
+  if (signalSocket && signalSocket.readyState <= 1) {
+    signalSocket.close();
+  }
+  signalRoom = roomCode;
+  signalOnMessage = onMessage;
+
+  const url = `${SIGNAL_URL}/?room=${encodeURIComponent(roomCode)}`;
+  signalSocket = new WebSocket(url);
+
+  signalSocket.onopen = () => {
+    if (signalReconnectTimer) {
+      clearTimeout(signalReconnectTimer);
+      signalReconnectTimer = null;
+    }
+    if (onOpen) onOpen();
+  };
+
+  signalSocket.onmessage = (event) => {
+    let msg;
+    try { msg = JSON.parse(event.data); } catch (_) { return; }
+    if (signalOnMessage) signalOnMessage(msg);
+  };
+
+  signalSocket.onerror = () => {};
+
+  signalSocket.onclose = () => {
+    if (!signalRoom) return;
+    if (signalReconnectTimer) clearTimeout(signalReconnectTimer);
+    signalReconnectTimer = setTimeout(() => {
+      if (signalRoom) {
+        connectSignal(signalRoom, signalOnMessage, onOpen, onFail);
+      }
+    }, 1500);
+  };
+}
+
+function sendSignal(msg) {
+  if (signalSocket && signalSocket.readyState === WebSocket.OPEN) {
+    signalSocket.send(JSON.stringify(msg));
+    return true;
+  }
+  return false;
+}
+
+function closeSignal() {
+  if (signalReconnectTimer) {
+    clearTimeout(signalReconnectTimer);
+    signalReconnectTimer = null;
+  }
+  signalRoom = null;
+  if (signalSocket) {
+    try { signalSocket.close(); } catch (_) {}
+    signalSocket = null;
+  }
+}
+
+/* ============================================================
+   10. Hôte
+   ============================================================ */
+async function startHost(){
+  cleanup();
+  try { pairingCode = makePairingCode(); }
+  catch(e){ toast(e.message || t('crypto-required')); return; }
+  role = 'host';
+  sessionStart = Date.now();
+
+  $('#host-code').textContent = formatPairingCode(pairingCode);
+  $('#auto-pairing-info').hidden = (mode === 'manual');
+  $('#host-manual').hidden = (mode !== 'manual');
+  $('#host-offer').value = '';
+  $('#host-answer-in').value = '';
+  const hostOfferQr = $('#host-offer-qr');
+  if (hostOfferQr){ hostOfferQr.innerHTML = ''; hostOfferQr.hidden = true; }
+  clearFileListUI();
+  setHostStatus(t('preparing'), 'spin');
+  showView('v-host');
+
+  generateQR(pairingCode);
+  if (mode !== 'manual') pairingTimer = setTimeout(expirePairing, PAIRING_TTL);
+
+  try{
+    const sdp = await createOfferSDP();
+
+    if (mode === 'manual'){
+      try {
+        const packed = await packSDP(sdp);
+        $('#host-offer').value = packed;
+        const ok = renderQrPayload($('#host-offer-qr'), packed);
+        if (!ok) toast(t('qr-too-big'));
+      } catch(_){}
+      setHostStatus(t('manual-step-2-host'), '');
+    }else{
+      const room = pairingCode;
+
+      connectSignal(
+        room,
+        async (msg) => {
+          if (msg.type === 'answer') {
+            if (!pc || pc.signalingState !== 'have-local-offer') return;
+            try {
+              await pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp });
+              setHostStatus(t('answer-received'), 'spin');
+            } catch (e) {
+              setHostStatus(t('answer-invalid'), 'err');
+            }
+          }
+          if (msg.type === 'ice' && pc && msg.candidate) {
+            try { await pc.addIceCandidate(msg.candidate); } catch (_) {}
+          }
+          if (msg.type === 'peer-left') {
+            setHostStatus(t('channel-closed'), 'err');
+          }
+        },
+        () => {
+          sendSignal({ type: 'offer', sdp });
+          setHostStatus(t('waiting-peer'), 'spin');
+        },
+        () => {
+          setHostStatus(t('signal-error'), 'err');
+        }
+      );
+
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          sendSignal({ type: 'ice', candidate: event.candidate.toJSON() });
+        }
+      };
+    }
+  }catch(e){
+    setHostStatus(t('error-prefix') + ' : ' + e.message, 'err');
+  }
+}
+
+function setHostStatus(text, kind){
+  const el = $('#host-status');
+  el.className = 'status' + (kind === 'err' ? ' err' : kind === 'ok' ? ' ok' : '');
+  el.innerHTML = (kind === 'spin' ? '<span class="spinner"></span>' : '') + '<span></span>';
+  el.lastChild.textContent = text;
+}
+
+function expirePairing(){
+  pairingTimer = null;
+  if (connectedOnce) return;
+  if (offerTimer) { clearInterval(offerTimer); offerTimer = null; }
+  closeSignal();
+  if (role === 'host') setHostStatus(t('code-expired'), 'err');
+  if (role === 'join'){
+    const st = $('#join-status');
+    if (st) { st.className = 'status err'; st.textContent = t('code-expired'); }
+  }
+}
+
+function generateQR(code){
+  const container = $('#qr-container');
+  if (mode === 'manual') { if (container) container.hidden = true; return; }
+  if (!container || typeof qrcode === 'undefined') {
+    if (container) container.hidden = true;
+    return;
+  }
+  try {
+    const url = location.origin + location.pathname + '#join=' + code;
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    container.innerHTML = qr.createImgTag(4, 4);
+    container.hidden = false;
+  } catch (e) {
+    container.hidden = true;
+  }
+}
+
+/* ============================================================
+   11. Rejoindre
+   ============================================================ */
+async function joinWithCode(){
+  const code = normalizePairingCode($('#join-code').value);
+  if (!/^\d{6}$/.test(code)){
+    toast(t('enter-pairing-code')); return;
+  }
+
+  cleanup();
+  role = 'join';
+  joinedOnce = false;
+  sessionStart = Date.now();
+  pairingCode = code;
+  clearFileListUI();
+
+  const st = $('#join-status');
+  st.hidden = false;
+  st.className = 'status';
+  st.innerHTML = '<span class="spinner"></span><span></span>';
+  st.lastChild.textContent = t('searching-peer');
+
+  pairingTimer = setTimeout(() => {
+    if (role !== 'join' || connectedOnce) return;
+    closeSignal();
+    st.className = 'status err';
+    st.textContent = t('code-expired');
+  }, PAIRING_TTL);
+
+  connectSignal(
+    code,
+    async (msg) => {
+      if (msg.type === 'offer') {
+        if (joinedOnce) return;
+        joinedOnce = true;
+        st.innerHTML = '<span class="spinner"></span><span></span>';
+        st.lastChild.textContent = t('offer-received');
+        try {
+          const answerSdp = await createAnswerSDP(msg.sdp);
+          sendSignal({ type: 'answer', sdp: answerSdp });
+          st.innerHTML = '<span class="spinner"></span><span></span>';
+          st.lastChild.textContent = t('connecting');
+        } catch (e) {
+          st.className = 'status err';
+          st.textContent = t('nego-failed') + e.message;
+        }
+        if (pc) {
+          pc.onicecandidate = (event) => {
+            if (event.candidate) {
+              sendSignal({ type: 'ice', candidate: event.candidate.toJSON() });
+            }
+          };
+        }
+      }
+      if (msg.type === 'ice' && pc && msg.candidate) {
+        try { await pc.addIceCandidate(msg.candidate); } catch (_) {}
+      }
+      if (msg.type === 'peer-left') {
+        st.className = 'status err';
+        st.textContent = t('channel-closed');
+      }
+    },
+    () => {
+      st.innerHTML = '<span class="spinner"></span><span></span>';
+      st.lastChild.textContent = t('searching-peer');
+    },
+    () => {
+      st.className = 'status err';
+      st.textContent = t('signal-error');
+    }
+  );
+}
+
+function checkDeepLink(){
+  const hash = location.hash;
+  const m = hash.match(/#join=(\d{6})/);
+  if (!m) return;
+  mode = 'auto';
+  $('#chk-manual').checked = false;
+  $('#join-code-card').hidden = false;
+  $('#join-manual').hidden = true;
+  showView('v-join');
+  $('#join-code').value = m[1];
+  setTimeout(() => joinWithCode(), 300);
+}
+
+/* ============================================================
+   12. Manuel
+   ============================================================ */
+async function manualHostConnect(){
+  const raw = $('#host-answer-in').value.trim();
+  if (!raw){ toast(t('paste-answer')); return; }
+  try{
+    const sdp = await unpackSDP(raw);
+    await pc.setRemoteDescription({ type: 'answer', sdp });
+    setHostStatus(t('answer-accepted'), 'spin');
+  }catch(e){
+    setHostStatus(t('answer-unreadable') + e.message, 'err');
+  }
+}
+async function manualJoinGenerate(){
+  const raw = $('#join-offer-in').value.trim();
+  if (!raw){ toast(t('paste-offer')); return; }
+  try{
+    const offerSdp = await unpackSDP(raw);
+    const answerSdp = await createAnswerSDP(offerSdp);
+    const packed = await packSDP(answerSdp);
+    $('#join-answer-out').value = packed;
+    const ok = renderQrPayload($('#join-answer-qr'), packed);
+    if (!ok) toast(t('qr-too-big'));
+    $('#join-answer-box').hidden = false;
+    $('#join-status').hidden = false;
+    $('#join-status').className = 'status';
+    $('#join-status').innerHTML = '<span class="spinner"></span><span></span>';
+    $('#join-status').lastChild.textContent = t('connecting');
+  }catch(e){
+    toast(t('code-invalid') + e.message);
+  }
+}
+
+/* ============================================================
+   13. États de connexion + SAS
+   ============================================================ */
+let connectedOnce = false;
+
+async function onConnected(){
+  if (connectedOnce) return;
+  connectedOnce = true;
+
+  if (offerTimer){ clearInterval(offerTimer); offerTimer = null; }
+  if (pairingTimer){ clearTimeout(pairingTimer); pairingTimer = null; }
+  closeSignal();
+
+  statePromise = new Promise(resolve => {
+    stateResolve = resolve;
+    setTimeout(resolve, 2500);
+  });
+
+  const cs = $('#conn-status');
+  cs.className = 'status ok';
+  cs.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = '🔒 ' + t('connected');
+  cs.appendChild(span);
+
+  const stats = $('#stats');
+  if (stats) stats.hidden = false;
+
+  startPing();
+  startSessionTimer();
+  vibrate(30);
+
+  showView('v-main');
+
+  // --- SAS ---
+  sasSelfConfirmed = false;
+  sasPeerConfirmed = false;
+  sasVerified = false;
+  sasRejected = false;
+  sasCode = '';
+
+  const sas = await computeSAS();
+  if (sasRejected) return;
+  if (!sas){
+    toast(t('sas-error'));
+    $('#btn-pick').disabled = true;
+    return;
+  }
+  sasCode = sas;
+  $('#sas-code').textContent = formatSasCode(sas);
+  $('#sas-code').classList.remove('mismatch', 'verified');
+  $('#sas-card').hidden = false;
+  updateSasUI();
+  checkSasVerified();
+}
+
+function updateSasUI(){
+  const card = $('#sas-card');
+  if (!card || card.hidden || !sasCode) return;
+
+  const statusEl = $('#sas-status');
+  const confirmBtn = $('#btn-sas-confirm');
+  const rejectBtn  = $('#btn-sas-reject');
+  const codeEl     = $('#sas-code');
+
+  // Bouton ✓
+  if (sasSelfConfirmed){
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = '✓';
+  } else {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = t('sas-confirm');
+  }
+
+  // Bouton ✗
+  rejectBtn.disabled = sasRejected;
+
+  if (sasRejected){
+    codeEl.classList.add('mismatch');
+    statusEl.className = 'status err';
+    statusEl.textContent = '⚠ ' + t('sas-mismatch');
+    return;
+  }
+
+  if (sasVerified){
+    codeEl.classList.add('verified');
+    statusEl.className = 'status ok';
+    statusEl.textContent = t('sas-verified');
+    return;
+  }
+
+  if (sasSelfConfirmed && !sasPeerConfirmed){
+    statusEl.className = 'status';
+    statusEl.innerHTML = '<span class="spinner"></span><span></span>';
+    statusEl.lastChild.textContent = t('sas-waiting-peer');
+  } else if (!sasSelfConfirmed && sasPeerConfirmed){
+    statusEl.className = 'status warn';
+    statusEl.textContent = t('sas-waiting-you');
+  } else {
+    statusEl.className = 'status';
+    statusEl.innerHTML = '<span class="spinner"></span><span></span>';
+    statusEl.lastChild.textContent = t('sas-waiting');
+  }
+}
+
+function onSasSelfConfirm(){
+  if (sasRejected || sasSelfConfirmed || !sasCode) return;
+  sasSelfConfirmed = true;
+  try { dc.send(JSON.stringify({ t: 'sas-ok' })); } catch(_){}
+  updateSasUI();
+  checkSasVerified();
+}
+
+function onSasSelfReject(){
+  if (sasRejected) return;
+  sasRejected = true;
+  try { dc.send(JSON.stringify({ t: 'sas-reject' })); } catch(_){}
+  handleSasRejection(t('sas-rejected-warning'));
+}
+
+function onSasPeerConfirm(){
+  if (sasRejected || sasPeerConfirmed) return;
+  sasPeerConfirmed = true;
+  updateSasUI();
+  checkSasVerified();
+}
+
+function onSasPeerReject(){
+  if (sasRejected) return;
+  sasRejected = true;
+  handleSasRejection(t('sas-rejected-by-peer'));
+}
+
+function checkSasVerified(){
+  if (sasRejected) return;
+  if (!sasCode) return;
+  if (sasSelfConfirmed && sasPeerConfirmed && !sasVerified){
+    sasVerified = true;
+    $('#btn-pick').disabled = false;
+    // Mettre à jour le statut global
+    const cs = $('#conn-status');
+    if (cs){
+      cs.className = 'status ok';
+      cs.innerHTML = '';
+      const span = document.createElement('span');
+      span.textContent = '🔒 ' + t('connected-verified');
+      cs.appendChild(span);
+    }
+    updateSasUI();
+    toast(t('sas-verified-toast'));
+    vibrate(30);
+    
+    // Cacher la carte SAS IMMÉDIATEMENT
+    const card = $('#sas-card');
+    if (card) card.hidden = true;
+  }
+}
+
+function handleSasRejection(message){
+  sasRejected = true;
+  $('#btn-pick').disabled = true;
+
+  // Purge les fichiers d'une session rejetée (peut être un MITM)
+  clearFileListUI({ wipeStore: true });
+
+  // UI
+  const codeEl = $('#sas-code');
+  if (codeEl) codeEl.classList.add('mismatch');
+  const statusEl = $('#sas-status');
+  if (statusEl){
+    statusEl.className = 'status err';
+    statusEl.textContent = '⚠ ' + t('sas-mismatch');
+  }
+  const cs = $('#conn-status');
+  if (cs){
+    cs.className = 'status err';
+    cs.innerHTML = '';
+    const span = document.createElement('span');
+    span.textContent = message;
+    cs.appendChild(span);
+  }
+  const confirmBtn = $('#btn-sas-confirm');
+  const rejectBtn  = $('#btn-sas-reject');
+  if (confirmBtn) confirmBtn.disabled = true;
+  if (rejectBtn)  rejectBtn.disabled  = true;
+
+  toast(message);
+  vibrate([50, 50, 50, 50, 50]);
+
+  // Fermer la connexion sans déclencher onFatal
+  if (dc){ try { dc.close(); } catch(_){} dc = null; }
+  if (pc){ try { pc.close(); } catch(_){} pc = null; }
+}
+
+function onFatal(message){
+  if (sasRejected) return; // déjà géré
+
+  if (offerTimer){ clearInterval(offerTimer); offerTimer = null; }
+  if (pairingTimer){ clearTimeout(pairingTimer); pairingTimer = null; }
+  closeSignal();
+  stopPing(); stopSessionTimer();
+
+  const cs = $('#conn-status');
+  if (cs){
+    cs.className = 'status err';
+    cs.innerHTML = '';
+    const span = document.createElement('span');
+    span.textContent = message;
+    cs.appendChild(span);
+  }
+  toast(message);
+}
+
+function cleanup(){
+  if (offerTimer){ clearInterval(offerTimer); offerTimer = null; }
+  if (pairingTimer){ clearTimeout(pairingTimer); pairingTimer = null; }
+  closeSignal();
+  if (dc){ const d = dc; dc = null; try { d.close(); } catch(e){} }
+  if (pc){ const p = pc; pc = null; try { p.close(); } catch(e){} }
+  stopQRScanner();
+  stopPing(); stopSessionTimer();
+  pairingCode = '';
+
+  connectedOnce = false;
+  joinedOnce = false;
+  statePromise = null; stateResolve = null;
+  haveRemote = {};
+  nidMap.clear();
+  cancelled.clear();
+  queue = [];
+  busy = false;
+
+  // SAS
+  sasCode = '';
+  sasSelfConfirmed = false;
+  sasPeerConfirmed = false;
+  sasVerified = false;
+  sasRejected = false;
+  const sasCard = $('#sas-card');
+  if (sasCard) sasCard.hidden = true;
+  const codeEl = $('#sas-code');
+  if (codeEl){ codeEl.textContent = '······'; codeEl.classList.remove('mismatch', 'verified'); }
+  const sasStatus = $('#sas-status');
+  if (sasStatus){ sasStatus.className = 'status'; sasStatus.textContent = ''; }
+  const confirmBtn = $('#btn-sas-confirm');
+  const rejectBtn  = $('#btn-sas-reject');
+  if (confirmBtn) confirmBtn.disabled = false;
+  if (rejectBtn)  rejectBtn.disabled  = false;
+  const pick = $('#btn-pick');
+  if (pick) pick.disabled = true;
+
+  const stats = $('#stats');
+  if (stats) stats.hidden = true;
+  
+  const hostOfferQr = $('#host-offer-qr');
+  if (hostOfferQr){ hostOfferQr.innerHTML = ''; hostOfferQr.hidden = true; }
+  const joinAnswerQr = $('#join-answer-qr');
+  if (joinAnswerQr){ joinAnswerQr.innerHTML = ''; joinAnswerQr.hidden = true; }
+}
+
+function goHome(){
+  cleanup();
+  showView('v-home');
+  const cs = $('#conn-status');
+  cs.className = 'status';
+  cs.innerHTML = '<span class="spinner"></span><span></span>';
+  cs.lastChild.textContent = t('secure-connecting');
+}
+
+function startPing(){
+  stopPing();
+  const sendPing = () => {
+    if (!dc || dc.readyState !== 'open') return;
+    try { dc.send(JSON.stringify({ t: 'ping', ts: performance.now() })); } catch(e){}
+  };
+  // Attendre 1 seconde pour être sûr que le canal est prêt
+  setTimeout(() => {
+    sendPing();
+    pingTimer = setInterval(sendPing, 5000);
+  }, 1000);
+}
+function stopPing(){
+  if (pingTimer){ clearInterval(pingTimer); pingTimer = null; }
+  currentRtt = null;
+}
+function updateRttDisplay(){
+  const el = $('#stat-rtt');
+  if (!el) return;
+  if (currentRtt == null){ el.textContent = '—'; el.className = ''; return; }
+  const ms = Math.round(currentRtt);
+  el.textContent = ms + ' ms';
+  el.className = ms < 80 ? 'rtt-good' : ms < 250 ? 'rtt-mid' : 'rtt-bad';
+}
+function startSessionTimer(){
+  stopSessionTimer();
+  sessionStartTime = Date.now();
+  const upd = () => {
+    const sec = Math.floor((Date.now() - sessionStartTime) / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    const el = $('#stat-duration');
+    if (el) el.textContent = m > 0 ? (m + ' min ' + s + ' s') : (s + ' s');
+  };
+  upd();
+  sessionTimer = setInterval(upd, 1000);
+}
+function stopSessionTimer(){
+  if (sessionTimer){ clearInterval(sessionTimer); sessionTimer = null; }
+}
+
+/* ============================================================
+   14. Menu langue
+   ============================================================ */
+function openLangMenu(){
+  const menu = $('#lang-menu');
+  const btn  = $('#btn-lang');
+  if (!menu || !btn) return;
+  menu.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+}
+function closeLangMenu(){
+  const menu = $('#lang-menu');
+  const btn  = $('#btn-lang');
+  if (!menu || !btn) return;
+  menu.hidden = true;
+  btn.setAttribute('aria-expanded', 'false');
+}
+function setLanguage(newLang){
+  if (!LANGUAGES.includes(newLang)) return;
+  lang = newLang;
+  try { localStorage.setItem(LANG_KEY, lang); } catch(_){}
+  applyI18n();
+  closeLangMenu();
+  toast(t('lang-changed'));
+}
+
+/* ============================================================
+   15. Branchements UI
+   ============================================================ */
+$('#btn-theme').onclick = () => {
+  const cur = currentTheme();
+  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+  applyTheme(next);
+  toast(t('theme-' + next));
+};
+
+$('#btn-lang').onclick = (e) => {
+  e.stopPropagation();
+  const menu = $('#lang-menu');
+  if (menu.hidden) openLangMenu();
+  else closeLangMenu();
+};
+
+document.querySelectorAll('#lang-menu button').forEach(b => {
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setLanguage(b.dataset.lang);
+  });
+});
+
+document.addEventListener('click', (e) => {
+  const menu = $('#lang-menu');
+  if (!menu || menu.hidden) return;
+  if (!e.target.closest('.lang-wrap')) closeLangMenu();
+});
+
+document.addEventListener('pointerdown', e => {
+  const btn = e.target.closest('.btn, .theme-toggle, .lang-menu button, .file .actions button, .file .actions a');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const x = (e.clientX || rect.left + rect.width / 2) - rect.left - size / 2;
+  const y = (e.clientY || rect.top + rect.height / 2) - rect.top - size / 2;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  r.style.width = r.style.height = size + 'px';
+  r.style.left = x + 'px';
+  r.style.top  = y + 'px';
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 620);
+});
+
+$('#chk-manual').onchange = e => {
+  mode = e.target.checked ? 'manual' : 'auto';
+  $('#hint-home').innerHTML = t(mode === 'manual' ? 'hint-manual' : 'hint-auto');
+};
+
+$('#btn-send').onclick    = startHost;
+$('#btn-receive').onclick = () => {
+  const manual = (mode === 'manual');
+  $('#join-code-card').hidden = manual;
+  $('#join-manual').hidden = !manual;
+  $('#join-status').hidden = true;
+  $('#join-answer-box').hidden = true;
+  $('#join-offer-in').value = '';
+  $('#join-answer-out').value = '';
+  
+  // Reset QR de réponse
+  const joinAnswerQr = $('#join-answer-qr');
+  if (joinAnswerQr){ joinAnswerQr.innerHTML = ''; joinAnswerQr.hidden = true; }
+  
+  showView('v-join');
+  if (!manual) setTimeout(() => $('#join-code').focus(), 150);
+};
+
+$('#btn-cancel-host').onclick = goHome;
+$('#btn-cancel-join').onclick = goHome;
+$('#btn-back').onclick        = goHome;
+
+$('#btn-clear').onclick = () => {
+  if (!$('#file-list').children.length) return;
+  if (busy){ toast(t('clear-busy')); return; }
+  if (!confirm(t('clear-confirm'))) return;
+  clearFileListUI({ wipeStore: true });
+  if (dc && dc.readyState === 'open'){
+    try { dc.send(JSON.stringify({ t: 'list-clear' })); } catch(_){}
+    try { dc.send(JSON.stringify({ t: 'state', have: snapshotHave() })); } catch(_){}
+  }
+};
+
+function feedbackCopied(btn){
+  if (!btn) return;
+  btn.classList.add('copied');
+  setTimeout(() => btn.classList.remove('copied'), 900);
+}
+
+$('#btn-copy-code').onclick = () => {
+  const code = normalizePairingCode($('#host-code').textContent);
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(
+    () => { toast(t('code-copied')); feedbackCopied($('#btn-copy-code')); },
+    () => toast(t('copy-impossible'))
+  );
+};
+$('#btn-share-code').onclick = async () => {
+  const code = normalizePairingCode($('#host-code').textContent);
+  if (!code) return;
+  const link = location.origin + location.pathname + '#join=' + code;
+  const text = t('share-text', { code: formatPairingCode(code) }) + '\n' + link;
+  if (navigator.share){
+    try { await navigator.share({ title: t('share-title'), text }); return; } catch(_){}
+  }
+  try { await navigator.clipboard.writeText(text); toast(t('copied')); feedbackCopied($('#btn-share-code')); }
+  catch(_) { toast(t('share-unavailable')); }
+};
+
+$('#btn-join').onclick   = joinWithCode;
+$('#join-code').onkeydown = e => { if (e.key === 'Enter') joinWithCode(); };
+$('#join-code').oninput = e => {
+  e.target.value = normalizePairingCode(e.target.value);
+};
+
+$('#btn-copy-offer').onclick   = () => copyField($('#host-offer')).then(() => feedbackCopied($('#btn-copy-offer')));
+$('#btn-copy-answer').onclick  = () => copyField($('#join-answer-out')).then(() => feedbackCopied($('#btn-copy-answer')));
+$('#btn-host-connect').onclick = manualHostConnect;
+$('#btn-join-gen').onclick     = manualJoinGenerate;
+
+/* SAS buttons */
+$('#btn-sas-confirm').onclick = onSasSelfConfirm;
+$('#btn-sas-reject').onclick  = onSasSelfReject;
+
+/* ============================================================
+   Scanner QR
+   ============================================================ */
+let qrScannerStream = null;
+let qrScanInterval = null;
+let qrScannerActive = false;
+
+async function startQRScan(onResult){
+  const box = $('#qr-scanner-box');
+  const video = $('#qr-scanner-video');
+  box.hidden = false;
+  qrScannerActive = true;
+
+  try {
+    qrScannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = qrScannerStream;
+    await video.play();
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const detector = ('BarcodeDetector' in window) ? new BarcodeDetector({ formats: ['qr_code'] }) : null;
+    let scanning = false, lastScan = 0;
+
+    const scan = async now => {
+      if (!qrScannerActive) return;
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+        qrScanInterval = requestAnimationFrame(scan);
+        return;
+      }
+      if (scanning || now - lastScan < 120) { qrScanInterval = requestAnimationFrame(scan); return; }
+      scanning = true; lastScan = now;
+
+      let code = null;
+      try {
+        const scale = Math.min(1, 640 / video.videoWidth);
+        canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+        canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        if (detector) try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length) code = barcodes[0].rawValue;
+        } catch(_) {}
+        if (!code && typeof jsQR !== 'undefined') {
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const qr = jsQR(imageData.data, imageData.width, imageData.height);
+          if (qr) code = qr.data;
+        }
+      } catch(_) {}
+      scanning = false;
+      if (!qrScannerActive) return;
+
+      if (code) {
+        stopQRScanner();
+        onResult(code);
+        return;
+      }
+
+      qrScanInterval = requestAnimationFrame(scan);
+    };
+
+    qrScanInterval = requestAnimationFrame(scan);
+  } catch (e) {
+    qrScannerActive = false;
+    toast(t('camera-unavailable') + e.message);
+    box.hidden = true;
+  }
+}
+
+/* Bouton scanner principal (mode auto) */
+$('#btn-scan-qr').onclick = () => startQRScan(code => {
+  const m = code.match(/#join=(\d{6})/);
+  const found = m ? m[1] : (code.match(/\d{6}/) || [])[0];
+  if (found) {
+    $('#join-code').value = found;
+    joinWithCode();
+  } else {
+    toast(t('code-invalid') + code);
+  }
+});
+
+/* Bouton scanner manuel : réponse (hôte) */
+$('#btn-scan-answer-qr').onclick = () => startQRScan(async payload => {
+  $('#host-answer-in').value = payload;
+  await manualHostConnect();
+});
+
+/* Bouton scanner manuel : offre (receveur) */
+$('#btn-scan-offer-qr').onclick = () => startQRScan(async payload => {
+  $('#join-offer-in').value = payload;
+  await manualJoinGenerate();
+});
+
+$('#btn-close-scanner').onclick = stopQRScanner;
+
+function stopQRScanner() {
+  qrScannerActive = false;
+  if (qrScanInterval) { cancelAnimationFrame(qrScanInterval); qrScanInterval = null; }
+  if (qrScannerStream) {
+    qrScannerStream.getTracks().forEach(t => t.stop());
+    qrScannerStream = null;
+  }
+  const video = $('#qr-scanner-video');
+  if (video) video.srcObject = null;
+  $('#qr-scanner-box').hidden = true;
+}
+
+/* ============================================================
+   File picker / drag & drop
+   ============================================================ */
+$('#btn-pick').onclick = () => {
+  if (!sasVerified){ toast(t('sas-first')); return; }
+  $('#file-input').click();
+};
+$('#file-input').onchange = e => {
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  if (files.length) queueFiles(files);
+};
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape'){
+    const menu = $('#lang-menu');
+    if (menu && !menu.hidden){ closeLangMenu(); return; }
+    const active = $('.view.active');
+    if (active && active.id !== 'v-home') goHome();
+  }
+});
+
+let dragCount = 0;
+window.addEventListener('dragenter', e => {
+  if (!dc || dc.readyState !== 'open' || !sasVerified) return;
+  e.preventDefault();
+  dragCount++;
+  document.body.classList.add('dragging');
+});
+window.addEventListener('dragleave', e => {
+  dragCount = Math.max(0, dragCount - 1);
+  if (dragCount === 0) document.body.classList.remove('dragging');
+});
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => {
+  e.preventDefault();
+  dragCount = 0;
+  document.body.classList.remove('dragging');
+  if (!dc || dc.readyState !== 'open'){ toast(t('connect-first')); return; }
+  if (!sasVerified){ toast(t('sas-first')); return; }
+  const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+  if (files.length) queueFiles(files);
+});
+
+/* ============================================================
+   16. Init
+   ============================================================ */
+updateMetaThemeColor();
+applyI18n();
+window.matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', updateMetaThemeColor);
+
+if (!(window.crypto && crypto.subtle)){
+  console.warn("crypto.subtle indisponible : vérification SAS désactivée.");
+}
+
+checkDeepLink();
+
+})();
+</script>
+</body>
+</html>
