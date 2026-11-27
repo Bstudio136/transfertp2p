@@ -1,16 +1,33 @@
-MIT Non-Commercial & No-Derivatives License (MIT Restreinte)
+MIT Non-Commercial & No-Derivatives License with Contribution Exception
+(MIT Restreinte avec Exception de Contribution)
 
 🇬🇧 English Version
 -------------------
-Copyright (c) 2026 Bstudio136
+Copyright (c) 2026 Bstudio136. All rights reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to use
-the Software as-is only, without modification, subject to the following conditions:
+of this software and associated documentation files (the "Software"), to:
+1. Use the Software as-is, without modification, for personal and non-commercial purposes.
+2. View and read the source code for informational and educational purposes.
+3. Contribute to the improvement of the Software (e.g., reporting bugs, 
+   suggesting features, or submitting pull requests) exclusively through the 
+   official repository.
 
-It is strictly forbidden to modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, or to permit persons to whom the Software is
-furnished to do so.
+It is strictly forbidden to:
+1. Copy, download, reproduce, or duplicate any part of the Software for your 
+   own personal or commercial use.
+2. Modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+   Software, or create derivative works based on it.
+3. Reuse any portion of the source code in another project, whether commercial 
+   or non-commercial.
+4. Permit persons to whom the Software is furnished to do any of the above.
+
+By submitting a contribution (pull request, code snippet, or suggestion) to the 
+official repository, you agree that all rights, title, and interest in the 
+contribution become the exclusive property of the Author (Bstudio136). 
+
+Any use of the Software outside the official repository requires explicit, 
+written permission from the Author.
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
@@ -26,17 +43,35 @@ SOFTWARE.
 
 🇫🇷 Version Française
 ---------------------
-Copyright (c) 2026 Bstudio136
+Copyright (c) 2026 Bstudio136. Tous droits réservés.
 
 L'autorisation est accordée, gratuitement, à toute personne obtenant une copie
-de ce logiciel et des fichiers de documentation associés (le "logiciel"), d'utiliser
-uniquement le Logiciel tel quel, sans modification, sous réserve des conditions suivantes :
+de ce logiciel et des fichiers de documentation associés (le "Logiciel"), de :
+1. Utiliser le Logiciel tel quel, sans modification, à des fins personnelles 
+   et non commerciales.
+2. Visualiser et lire le code source à des fins informatives et éducatives.
+3. Contribuer à l'amélioration du Logiciel (par exemple, signaler des bugs, 
+   suggérer des fonctionnalités ou soumettre des pull requests) exclusivement 
+   via le dépôt officiel.
 
-Il est strictement interdit de modifier, fusionner, publier, distribuer, sous-licencier 
-et/ou vendre des copies du Logiciel, ou de permettre à des tiers de le faire.
+Il est strictement interdit de :
+1. Copier, télécharger, reproduire ou dupliquer toute partie du Logiciel pour 
+   votre propre usage personnel ou commercial.
+2. Modifier, fusionner, publier, distribuer, sous-licencier et/ou vendre des 
+   copies du Logiciel, ou créer des œuvres dérivées basées sur celui-ci.
+3. Réutiliser toute portion du code source dans un autre projet, qu'il soit 
+   commercial ou non commercial.
+4. Permettre à des tiers à qui le Logiciel est fourni de faire ce qui précède.
 
-L'avis de droit d'auteur ci-dessus et cet avis d'autorisation seront inclus dans toutes
-les copies ou parties substantielles du logiciel.
+En soumettant une contribution (pull request, extrait de code ou suggestion) au 
+dépôt officiel, vous acceptez que tous les droits, titres et intérêts sur la 
+contribution deviennent la propriété exclusive de l'Auteur (Bstudio136).
+
+Toute utilisation du Logiciel en dehors du dépôt officiel nécessite une 
+autorisation écrite explicite de l'Auteur.
+
+L'avis de droit d'auteur ci-dessus et cet avis d'autorisation seront inclus dans 
+toutes les copies ou parties substantielles du logiciel.
 
 LE LOGICIEL EST FOURNI "TEL QUEL", SANS GARANTIE D'AUCUNE SORTE, EXPRESS OU
 IMPLICITE, Y COMPRIS, MAIS SANS S'Y LIMITER, AUX GARANTIES DE MARCHANDISATION,
