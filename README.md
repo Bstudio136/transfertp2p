@@ -14,6 +14,7 @@
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-121013?style=for-the-badge&logo=github&logoColor=white)
+![License-Proprietary](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
 
 A lightweight web application for peer-to-peer (P2P) file transfers between phones and computers. The file data is sent over a DTLS-encrypted WebRTC channel and is not stored by the signaling service. WebRTC may use a TURN relay when a direct network path is unavailable.
 
@@ -87,7 +88,7 @@ To adapt this page to your own needs:
 
 1. **Colors**: Modify the CSS variables in `:root` to change the theme colors (e.g., `--accent: #f5b915;` for gold).
 
-2. **Signaling Server**: If you want to use your own server instead of `ntfy.sh`, modifie the `NTFY` constant in the JavaScript.
+2. **Signaling Server**: If you want to use your own server instead of `ntfy.sh`, modify the `NTFY` constant in the JavaScript.
 3. **TURN/STUN Servers**: Update the `ICE_CONFIG` object in the JavaScript to use your own TURN servers for better connection reliability.
 4. **Languages**: Add or modify translations in the `I18N` object.
 
@@ -106,7 +107,11 @@ To adapt this page to your own needs:
 
 ## 📄 License
 
-This project is licensed under the **MIT Non-Commercial & No-Derivatives License (Restricted MIT)**. You are free to use the Software as-is for free, but modifying, reselling, or sublicensing the code is strictly forbidden. See the [LICENSE](LICENSE) file for details.
+This project is the personal property of **Bstudio136**. All rights reserved.
+
+You are welcome to **contribute to improving the project** (via pull requests, bug reports, or feature suggestions) exclusively through the official repository. 
+
+However, it is strictly forbidden to copy, modify for your own personal use, distribute, or sell this software (or any derivative work). See the [LICENSE](LICENSE) file for details.
 
 <a href="https://hiddenswap.com/pay/AgRPwfFe" target="_blank" rel="noopener"><img src="https://hiddenswap.com/pay/AgRPwfFe/button.svg" alt="Donate with any coin" width="247" height="44"></a>
 
@@ -121,6 +126,7 @@ This project is licensed under the **MIT Non-Commercial & No-Derivatives License
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 ![WebRTC](https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-121013?style=for-the-badge&logo=github&logoColor=white)
+![License-Proprietary](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)
 
 Une application web légère pour transférer des fichiers entre téléphones et ordinateurs en pair-à-pair. Les données passent par un canal WebRTC chiffré avec DTLS et ne sont pas stockées par le service de signalisation. WebRTC peut utiliser un relais TURN si une connexion directe est impossible.
 
@@ -213,6 +219,10 @@ Pour adapter cette page à vos propres besoins :
 
 ## 📄 Licence
 
-Ce projet est sous **Licence MIT Restreinte (MIT Non-Commercial & No-Derivatives License)**. Vous êtes libre de l'utiliser gratuitement tel quel, mais toute modification, sous-licence ou revente est strictement interdite. Consultez le fichier [LICENSE](LICENSE) pour plus de détails.
+Ce projet est la propriété personnelle de **Bstudio136**. Tous droits réservés.
+
+Vous êtes invités à **contribuer à l'amélioration du projet** (via des pull requests, rapports de bugs ou suggestions de fonctionnalités) exclusivement via le dépôt officiel. 
+
+Cependant, il est strictement interdit de copier, modifier pour votre usage personnel, distribuer ou vendre ce logiciel (ou toute œuvre dérivée). Consultez le fichier [LICENSE](LICENSE) pour plus de détails.
 
 <a href="https://hiddenswap.com/pay/AgRPwfFe" target="_blank" rel="noopener"><img src="https://hiddenswap.com/pay/AgRPwfFe/button.svg" alt="Donate with any coin" width="247" height="44"></a>
